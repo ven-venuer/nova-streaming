@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './styles.css';
 import AuthView from './components/AuthView.jsx';
 import Navbar, { MobileNav } from './components/Navbar.jsx';
@@ -259,6 +260,7 @@ export default function App() {
       </div>
       {selectedTitle && <DetailModal />}
       {playerTitle && <VideoPlayer />}
+      <SpeedInsights />
     </AppContext.Provider>
   );
 }
