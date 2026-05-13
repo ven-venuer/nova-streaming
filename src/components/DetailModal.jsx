@@ -42,7 +42,7 @@ export default function DetailModal() {
             <div className="modal-hero-content">
               <div className="modal-title">{d.title}</div>
               <div className="modal-meta">
-                <span style={{ color: scoreColor }}>⭐ {d.score}</span>
+                <span style={{ color: scoreColor }}>★ {d.score}</span>
                 <span>{d.year}</span>
                 {d.seasons && <span>{d.seasons} Season{d.seasons > 1 ? 's' : ''}</span>}
                 {d.runtime && <span>{d.runtime}m</span>}

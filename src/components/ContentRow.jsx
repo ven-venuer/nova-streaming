@@ -12,7 +12,7 @@ function TitleCard({ item, landscape }) {
   if (!imgSrc) return null;
 
   return (
-    <div className={`title-card ${landscape ? 'landscape' : 'poster'}`}>
+    <div className={`title-card ${landscape ? 'landscape' : 'poster'}`} onClick={() => setSelectedTitle(item)}>
       <img src={imgSrc} alt={item.title} loading="lazy" />
       <div className="card-gradient" />
       <div className="card-title">{item.title}</div>
@@ -20,7 +20,7 @@ function TitleCard({ item, landscape }) {
         <div className="hover-match">{item.matchScore}% Match</div>
         <div className="hover-title">{item.title}</div>
         <div className="hover-meta">
-          <span style={{ color: scoreColor }}>⭐ {item.score}</span> · {item.year} · {item.type === 'tv' ? 'TV' : 'Movie'}
+          <span style={{ color: scoreColor }}>★ {item.score}</span> · {item.year} · {item.type === 'tv' ? 'TV' : 'Movie'}
         </div>
         <div className="hover-actions">
           <button className="hover-action-btn play" onClick={e => { e.stopPropagation(); playTitle(item); }}><Play size={14} fill="white" /></button>

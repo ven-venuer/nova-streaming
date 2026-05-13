@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Search, Bell, X, User, Settings, LogOut, CheckCircle } from 'lucide-react';
+import { Search, Bell, X, User, Settings, LogOut, CheckCircle, Home, Film, Tv, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppContext } from '../App.jsx';
 import { searchMulti, img } from '../tmdb.js';
@@ -83,7 +83,7 @@ export default function Navbar() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                        {item.type === 'tv' ? 'TV Show' : 'Movie'} · {item.year} · ⭐ {item.score}
+                        {item.type === 'tv' ? 'TV Show' : 'Movie'} · {item.year} · ★ {item.score}
                       </div>
                     </div>
                   </motion.div>
@@ -187,10 +187,10 @@ export default function Navbar() {
 export function MobileNav() {
   const { currentView, setCurrentView, searchQuery, setSearchQuery } = useContext(AppContext);
   const tabs = [
-    { key: 'home', label: 'Home', icon: '🏠' },
-    { key: 'movies', label: 'Movies', icon: '🎬' },
-    { key: 'shows', label: 'Shows', icon: '📺' },
-    { key: 'mylist', label: 'My List', icon: '❤️' },
+    { key: 'home', label: 'Home', icon: Home },
+    { key: 'movies', label: 'Movies', icon: Film },
+    { key: 'shows', label: 'Shows', icon: Tv },
+    { key: 'mylist', label: 'My List', icon: Heart },
   ];
 
   return (
@@ -200,18 +200,22 @@ export function MobileNav() {
       borderTop: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', justifyContent: 'space-around', padding: '8px 0 env(safe-area-inset-bottom, 8px)',
     }} className="mobile-bottom-nav">
-      {tabs.map(t => (
-        <div key={t.key} onClick={() => { setCurrentView(t.key); setSearchQuery(''); }}
-          style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            cursor: 'pointer', padding: '4px 12px', fontSize: 10, fontWeight: 500,
-            color: currentView === t.key ? 'var(--accent-primary)' : 'var(--text-muted)',
-            transition: 'color 0.2s',
-          }}>
-          <span style={{ fontSize: 18 }}>{t.icon}</span>
-          {t.label}
-        </div>
-      ))}
+      {tabs.map(t => {
+        const Icon = t.icon;
+        const active = currentView === t.key;
+        return (
+          <div key={t.key} onClick={() => { setCurrentView(t.key); setSearchQuery(''); }}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              cursor: 'pointer', padding: '4px 12px', fontSize: 10, fontWeight: 500,
+              color: active ? 'var(--accent-primary)' : 'var(--text-muted)',
+              transition: 'color 0.2s',
+            }}>
+            <Icon size={20} strokeWidth={active ? 2.5 : 1.5} />
+            {t.label}
+          </div>
+        );
+      })}
     </div>
   );
 }

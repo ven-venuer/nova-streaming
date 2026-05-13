@@ -1,8 +1,18 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Info } from 'lucide-react';
+import { Play, Info, TrendingUp, Film, Tv, Star, PlayCircle, Trophy, Zap, Rocket, Laugh, Skull, CalendarDays, Radio } from 'lucide-react';
 import { AppContext } from '../App.jsx';
 import ContentRow from './ContentRow.jsx';
+
+const RowIcon = ({ Icon, color = 'var(--accent-primary)' }) => (
+  <div style={{
+    width: 24, height: 24, borderRadius: 6,
+    background: `${color}15`, display: 'inline-flex',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  }}>
+    <Icon size={14} color={color} />
+  </div>
+);
 
 function HeroSection() {
   const { catalog, setSelectedTitle, playTitle } = useContext(AppContext);
@@ -28,11 +38,13 @@ function HeroSection() {
       ))}
       <div className="hero-overlay" />
       <motion.div className="hero-content" variants={stagger} initial="hidden" animate="visible" key={item.id}>
-        <motion.div className="hero-badge" variants={fadeUp(0.1)}>⚡ FEATURED {item.type === 'tv' ? 'SERIES' : 'MOVIE'}</motion.div>
+        <motion.div className="hero-badge" variants={fadeUp(0.1)}>
+          <Zap size={12} style={{ marginRight: 4, verticalAlign: -1 }} /> FEATURED {item.type === 'tv' ? 'SERIES' : 'MOVIE'}
+        </motion.div>
         <motion.h1 className="hero-title" variants={fadeUp(0.25)}>{item.title}</motion.h1>
         <motion.p className="hero-desc" variants={fadeUp(0.4)}>{item.description}</motion.p>
         <motion.div className="hero-meta" variants={fadeUp(0.5)}>
-          <span className="gold">⭐ {item.score}</span> · {item.year} · {item.type === 'tv' ? 'TV Show' : `Movie`} · {item.genre.slice(0, 2).join(' · ')}
+          <span className="gold">★ {item.score}</span> · {item.year} · {item.type === 'tv' ? 'TV Show' : `Movie`} · {item.genre.slice(0, 2).join(' · ')}
         </motion.div>
         <motion.div className="hero-buttons" variants={fadeUp(0.6)}>
           <button className="btn-play" onClick={() => playTitle(item)}><Play size={18} fill="white" /> PLAY NOW</button>
@@ -53,18 +65,18 @@ export default function HomeView() {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
       <HeroSection />
       <div style={{ marginTop: -60, position: 'relative', zIndex: 20 }}>
-        <ContentRow title="Trending Now" items={catalog.trending} icon="🔥" />
-        <ContentRow title="Popular Movies" items={catalog.popularMovies} icon="🎬" />
-        <ContentRow title="Popular TV Shows" items={catalog.popularTV} icon="📺" />
-        <ContentRow title="Top Rated Movies" items={catalog.topRatedMovies} icon="⭐" />
-        <ContentRow title="Now Playing" items={catalog.nowPlaying} icon="▶" />
-        <ContentRow title="Top Rated TV" items={catalog.topRatedTV} icon="🏆" />
-        <ContentRow title="Action Movies" items={catalog.actionMovies} icon="💥" />
-        <ContentRow title="Sci-Fi" items={catalog.sciFiMovies} icon="🚀" />
-        <ContentRow title="Comedy" items={catalog.comedyMovies} icon="😂" />
-        <ContentRow title="Horror" items={catalog.horrorMovies} icon="👻" />
-        <ContentRow title="Upcoming" items={catalog.upcoming} icon="📅" />
-        <ContentRow title="Airing Today" items={catalog.airingToday} icon="📡" landscape />
+        <ContentRow title="Trending Now" items={catalog.trending} icon={<RowIcon Icon={TrendingUp} />} />
+        <ContentRow title="Popular Movies" items={catalog.popularMovies} icon={<RowIcon Icon={Film} />} />
+        <ContentRow title="Popular TV Shows" items={catalog.popularTV} icon={<RowIcon Icon={Tv} />} />
+        <ContentRow title="Top Rated Movies" items={catalog.topRatedMovies} icon={<RowIcon Icon={Star} color="var(--accent-gold)" />} />
+        <ContentRow title="Now Playing" items={catalog.nowPlaying} icon={<RowIcon Icon={PlayCircle} />} />
+        <ContentRow title="Top Rated TV" items={catalog.topRatedTV} icon={<RowIcon Icon={Trophy} color="var(--accent-gold)" />} />
+        <ContentRow title="Action Movies" items={catalog.actionMovies} icon={<RowIcon Icon={Zap} color="#ff6b35" />} />
+        <ContentRow title="Sci-Fi" items={catalog.sciFiMovies} icon={<RowIcon Icon={Rocket} color="#4facfe" />} />
+        <ContentRow title="Comedy" items={catalog.comedyMovies} icon={<RowIcon Icon={Laugh} color="#46d369" />} />
+        <ContentRow title="Horror" items={catalog.horrorMovies} icon={<RowIcon Icon={Skull} color="#9b59b6" />} />
+        <ContentRow title="Upcoming" items={catalog.upcoming} icon={<RowIcon Icon={CalendarDays} />} />
+        <ContentRow title="Airing Today" items={catalog.airingToday} icon={<RowIcon Icon={Radio} color="#4facfe" />} landscape />
       </div>
     </motion.div>
   );
