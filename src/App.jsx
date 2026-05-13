@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import './styles.css';
 import AuthView from './components/AuthView.jsx';
 import Navbar, { MobileNav } from './components/Navbar.jsx';
@@ -243,6 +244,7 @@ export default function App() {
 
   return (
     <AppContext.Provider value={ctx}>
+      <Analytics />
       <Navbar />
       <MobileNav />
       <div className="main-content">
