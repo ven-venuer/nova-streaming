@@ -1,0 +1,113 @@
+import React, { useContext, useEffect, useRef } from 'react';
+import { ArrowLeft, X } from 'lucide-react';
+import { AppContext } from '../App.jsx';
+import { getMovieEmbedUrl, getTVEmbedUrl, PROVIDERS } from '../tmdb.js';
+
+export default function VideoPlayer() {
+  const { playerTitle: item, setPlayerTitle, playerSeason, playerEpisode, setPlayerSeason, setPlayerEpisode } = useContext(AppContext);
+  const containerRef = useRef(null);
+  const [provider, setProvider] = React.useState('videasy');
+
+  const embedUrl = item.type === 'tv'
+    ? getTVEmbedUrl(item.tmdbId || item.id, playerSeason, playerEpisode, provider)
+    : getMovieEmbedUrl(item.tmdbId || item.id, provider);
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape' && !document.fullscreenElement) {
+        setPlayerTitle(null);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [setPlayerTitle]);
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        
+        // Attempt to generically capture season/episode change events from any provider
+        const s = data?.season || data?.data?.season || data?.detail?.season;
+        const e = data?.episode || data?.data?.episode || data?.detail?.episode;
+
+        if (s && e && item.type === 'tv') {
+          setPlayerSeason(Number(s));
+          setPlayerEpisode(Number(e));
+        }
+      } catch (e) {
+        // Not JSON
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [item.type, setPlayerSeason, setPlayerEpisode]);
+
+  return (
+    <div ref={containerRef} style={{
+      position: 'fixed', inset: 0, zIndex: 3000,
+      background: 'black', display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Top bar */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+        padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16,
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)',
+        pointerEvents: 'auto',
+      }}>
+        <div style={{ cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center' }} onClick={() => setPlayerTitle(null)}>
+          <ArrowLeft size={24} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'white' }}>{item.title}</div>
+          <div style={{ fontSize: 13, color: '#a0a0b8' }}>
+            {item.type === 'tv' ? `Season ${playerSeason} · Episode ${playerEpisode}` : item.year}
+          </div>
+        </div>
+
+        <div style={{ cursor: 'pointer', color: 'white', marginLeft: 8 }} onClick={() => setPlayerTitle(null)}>
+          <X size={24} />
+        </div>
+      </div>
+
+      <iframe
+        src={embedUrl}
+        style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
+        allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+        allowFullScreen
+        webkitallowfullscreen="true"
+        mozallowfullscreen="true"
+        frameBorder="0"
+        title={item.title}
+      />
+
+      {/* Provider selection overlay */}
+      <div style={{
+        position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
+        pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 10,
+        background: 'rgba(0,0,0,0.6)', padding: '4px 12px', borderRadius: 6,
+        backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Server</div>
+        <select
+          value={provider}
+          onChange={e => setProvider(e.target.value)}
+          style={{
+            background: 'transparent', border: 'none', color: 'white',
+            fontFamily: 'DM Sans', fontSize: 14, fontWeight: 500, outline: 'none',
+            cursor: 'pointer', appearance: 'none', paddingRight: 16,
+          }}
+        >
+          {PROVIDERS.map(p => (
+            <option key={p.id} value={p.id} style={{ background: '#111', color: 'white' }}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        {/* Custom caret */}
+        <div style={{ pointerEvents: 'none', marginLeft: -12, marginTop: 2, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: '4px solid white' }} />
+      </div>
+    </div>
+  );
+}
+

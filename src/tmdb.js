@@ -1,0 +1,187 @@
+const TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2NTNkYTgxMDJiMDI5NTY4ZjE2ZWY5ZDgzMmVjZjg2OCIsIm5iZiI6MTc3ODY0MzMxMy4xNDMwMDAxLCJzdWIiOiI2YTAzZjE3MThhYzY2NzhhNzYzNzc4ZmIiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.NGAxXmlgY4caz07b-wQk27QMjmQnBi4dZ7oZf_6UdEs';
+const BASE = 'https://api.themoviedb.org/3';
+const IMG = 'https://image.tmdb.org/t/p';
+
+const headers = { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+
+async function get(path) {
+  const res = await fetch(`${BASE}${path}`, { headers });
+  if (!res.ok) throw new Error(`TMDB ${res.status}`);
+  return res.json();
+}
+
+export function img(path, size = 'w500') {
+  return path ? `${IMG}/${size}${path}` : null;
+}
+
+export function backdrop(path) {
+  return path ? `${IMG}/original${path}` : null;
+}
+
+// Normalize TMDB result into our app's title shape
+function normalize(item, mediaType) {
+  const type = mediaType || item.media_type || (item.title ? 'movie' : 'tv');
+  return {
+    id: item.id,
+    tmdbId: item.id,
+    imdbId: item.imdb_id || null,
+    title: item.title || item.name,
+    type,
+    genre: (item.genre_ids || []).map(id => GENRE_MAP[id] || 'Other'),
+    genreNames: (item.genres || []).map(g => g.name),
+    year: (item.release_date || item.first_air_date || '').substring(0, 4),
+    rating: item.adult ? 'R' : 'PG-13',
+    score: +(item.vote_average || 0).toFixed(1),
+    matchScore: Math.floor(65 + (item.vote_average || 5) * 3.5),
+    seasons: item.number_of_seasons || null,
+    episodes: item.number_of_episodes || null,
+    runtime: item.runtime || (item.episode_run_time && item.episode_run_time[0]) || null,
+    description: item.overview || '',
+    director: '',
+    cast: [],
+    poster: img(item.poster_path),
+    backdrop: backdrop(item.backdrop_path),
+    thumbnail: img(item.backdrop_path, 'w780'),
+    trailer: '#',
+    inMyList: false,
+    continueWatching: false,
+    progress: 0,
+    featured: false,
+    language: item.original_language === 'en' ? 'English' : item.original_language || 'English',
+    moods: [],
+    voteCount: item.vote_count || 0,
+    popularity: item.popularity || 0,
+  };
+}
+
+const GENRE_MAP = {
+  28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',
+  99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',
+  27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',
+  10770:'TV Movie',53:'Thriller',10752:'War',37:'Western',
+  10759:'Action & Adventure',10762:'Kids',10763:'News',10764:'Reality',
+  10765:'Sci-Fi & Fantasy',10766:'Soap',10767:'Talk',10768:'War & Politics',
+};
+
+// ── Fetch functions ──
+
+export async function fetchTrending() {
+  const data = await get('/trending/all/week?language=en-US');
+  return data.results.map(item => normalize(item));
+}
+
+export async function fetchPopularMovies() {
+  const data = await get('/movie/popular?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+export async function fetchTopRatedMovies() {
+  const data = await get('/movie/top_rated?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+export async function fetchUpcomingMovies() {
+  const data = await get('/movie/upcoming?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+export async function fetchNowPlayingMovies() {
+  const data = await get('/movie/now_playing?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+export async function fetchPopularTV() {
+  const data = await get('/tv/popular?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
+export async function fetchTopRatedTV() {
+  const data = await get('/tv/top_rated?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
+export async function fetchAiringTodayTV() {
+  const data = await get('/tv/airing_today?language=en-US&page=1');
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
+export async function fetchGenreMovies(genreId) {
+  const data = await get(`/discover/movie?language=en-US&sort_by=popularity.desc&with_genres=${genreId}&page=1`);
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+export async function fetchMovieDetails(id) {
+  const data = await get(`/movie/${id}?language=en-US&append_to_response=credits`);
+  const norm = normalize(data, 'movie');
+  norm.genreNames = (data.genres || []).map(g => g.name);
+  norm.director = data.credits?.crew?.find(c => c.job === 'Director')?.name || '';
+  norm.cast = (data.credits?.cast || []).slice(0, 6).map(c => c.name);
+  norm.runtime = data.runtime;
+  norm.imdbId = data.imdb_id;
+  return norm;
+}
+
+export async function fetchTVDetails(id) {
+  const data = await get(`/tv/${id}?language=en-US&append_to_response=credits`);
+  const norm = normalize(data, 'tv');
+  norm.genreNames = (data.genres || []).map(g => g.name);
+  norm.director = (data.created_by || []).map(c => c.name).join(', ') || '';
+  norm.cast = (data.credits?.cast || []).slice(0, 6).map(c => c.name);
+  norm.seasons = data.number_of_seasons;
+  norm.episodes = data.number_of_episodes;
+  norm.seasonsData = (data.seasons || []).filter(s => s.season_number > 0);
+  return norm;
+}
+
+export async function fetchTVSeasonEpisodes(tvId, seasonNumber) {
+  const data = await get(`/tv/${tvId}/season/${seasonNumber}?language=en-US`);
+  return (data.episodes || []).map(ep => ({
+    num: ep.episode_number,
+    title: ep.name,
+    dur: ep.runtime ? `${ep.runtime}m` : '—',
+    desc: ep.overview || '',
+    thumb: img(ep.still_path, 'w300'),
+    airDate: ep.air_date,
+  }));
+}
+
+export async function searchMulti(query) {
+  if (!query || query.trim().length < 2) return [];
+  const data = await get(`/search/multi?language=en-US&query=${encodeURIComponent(query)}&page=1`);
+  return data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv').map(item => normalize(item));
+}
+
+// ── Embed URLs ──
+export const PROVIDERS = [
+  { id: 'videasy', name: 'VidEasy (Default)', base: 'https://player.videasy.net' },
+  { id: 'vidsrc', name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
+  { id: 'vidsrcnet', name: 'VidSrc.net', base: 'https://vidsrc.net/embed' },
+  { id: 'vidsrcpro', name: 'VidSrc.pro', base: 'https://vidsrc.pro/embed' },
+  { id: 'vidking', name: 'VidKing', base: 'https://embed.su/embed' },
+  { id: 'vsembed', name: 'VSEmbed', base: 'https://vsembed.su/embed' },
+];
+
+export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {
+  if (provider === 'videasy') return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
+  if (provider === 'vidsrc') return `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`;
+  if (provider === 'vidsrcnet') return `https://vidsrc.net/embed/movie?tmdb=${tmdbId}`;
+  if (provider === 'vidsrcpro') return `https://vidsrc.pro/embed/movie/${tmdbId}`;
+  if (provider === 'vidking') return `https://embed.su/embed/movie/${tmdbId}`;
+  if (provider === 'vsembed') return `https://vsembed.su/embed/movie/${tmdbId}`;
+  return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
+}
+
+export function getTVEmbedUrl(tmdbId, season, episode, provider = 'videasy') {
+  if (provider === 'videasy') {
+    const baseParams = 'color=e50914&nextEpisode=true&episodeSelector=true&autoplayNextEpisode=true&overlay=true';
+    if (season && episode) return `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?${baseParams}`;
+    return `https://player.videasy.net/tv/${tmdbId}?${baseParams}`;
+  }
+  if (provider === 'vidsrc') return `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
+  if (provider === 'vidsrcnet') return `https://vidsrc.net/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
+  if (provider === 'vidsrcpro') return `https://vidsrc.pro/embed/tv/${tmdbId}/${season}/${episode}`;
+  if (provider === 'vidking') return `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}`;
+  if (provider === 'vsembed') return `https://vsembed.su/embed/tv/${tmdbId}/${season}/${episode}`;
+  
+  return `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=e50914`;
+}
