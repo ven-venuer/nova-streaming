@@ -58,7 +58,7 @@ export default function Navbar() {
       </ul>
       <div className="nav-right">
         <div style={{ position: 'relative' }}>
-          <div className="search-bar" style={{ width: searchOpen ? 280 : 0, opacity: searchOpen ? 1 : 0, padding: searchOpen ? '0 12px' : 0 }}>
+          <div className="search-bar" style={{ width: searchOpen ? 'min(280px, calc(100vw - 140px))' : 0, opacity: searchOpen ? 1 : 0, padding: searchOpen ? '0 12px' : 0 }}>
             <Search size={16} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
             <input placeholder="Search movies, TV shows..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             {searchOpen && <X size={16} style={{ cursor: 'pointer', flexShrink: 0 }} onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }} />}
@@ -69,7 +69,7 @@ export default function Navbar() {
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                 style={{
                   position: 'absolute', top: '100%', right: 0, marginTop: 8,
-                  width: 360, maxHeight: 480, overflowY: 'auto', borderRadius: 8,
+                  width: 'min(360px, calc(100vw - 32px))', maxHeight: 480, overflowY: 'auto', borderRadius: 8,
                   background: 'rgba(15,15,26,0.98)', border: '1px solid rgba(255,255,255,0.07)',
                   backdropFilter: 'blur(20px)', zIndex: 100,
                 }}>
@@ -105,7 +105,7 @@ export default function Navbar() {
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                 style={{
                   position: 'absolute', top: '100%', right: -60, marginTop: 12,
-                  width: 320, borderRadius: 8, background: 'rgba(15,15,26,0.98)',
+                  width: 'min(320px, calc(100vw - 32px))', borderRadius: 8, background: 'rgba(15,15,26,0.98)',
                   border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(20px)', zIndex: 100,
                   overflow: 'hidden'
                 }}>
@@ -181,5 +181,37 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
+  );
+}
+
+export function MobileNav() {
+  const { currentView, setCurrentView, searchQuery, setSearchQuery } = useContext(AppContext);
+  const tabs = [
+    { key: 'home', label: 'Home', icon: '🏠' },
+    { key: 'movies', label: 'Movies', icon: '🎬' },
+    { key: 'shows', label: 'Shows', icon: '📺' },
+    { key: 'mylist', label: 'My List', icon: '❤️' },
+  ];
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000,
+      background: 'rgba(8,8,16,0.95)', backdropFilter: 'blur(20px)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      display: 'flex', justifyContent: 'space-around', padding: '8px 0 env(safe-area-inset-bottom, 8px)',
+    }} className="mobile-bottom-nav">
+      {tabs.map(t => (
+        <div key={t.key} onClick={() => { setCurrentView(t.key); setSearchQuery(''); }}
+          style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            cursor: 'pointer', padding: '4px 12px', fontSize: 10, fontWeight: 500,
+            color: currentView === t.key ? 'var(--accent-primary)' : 'var(--text-muted)',
+            transition: 'color 0.2s',
+          }}>
+          <span style={{ fontSize: 18 }}>{t.icon}</span>
+          {t.label}
+        </div>
+      ))}
+    </div>
   );
 }

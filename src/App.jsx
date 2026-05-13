@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion';
 import './styles.css';
 import AuthView from './components/AuthView.jsx';
-import Navbar from './components/Navbar.jsx';
+import Navbar, { MobileNav } from './components/Navbar.jsx';
 import HomeView from './components/HomeView.jsx';
 import BrowseView from './components/BrowseView.jsx';
 import MyListView from './components/MyListView.jsx';
@@ -244,16 +244,19 @@ export default function App() {
   return (
     <AppContext.Provider value={ctx}>
       <Navbar />
-      <AnimatePresence mode="wait">
-        {currentView === 'home' && <HomeView key="home" />}
-        {currentView === 'movies' && <BrowseView key="movies" type="movies" />}
-        {currentView === 'shows' && <BrowseView key="shows" type="shows" />}
-        {currentView === 'series' && <BrowseView key="series" type="series" />}
-        {currentView === 'mylist' && <MyListView key="mylist" />}
-        {currentView === 'account' && <AccountView key="account" />}
-        {currentView === 'settings' && <SettingsView key="settings" />}
-        {currentView === 'login' && <AuthView key="login" onLogin={handleLogin} />}
-      </AnimatePresence>
+      <MobileNav />
+      <div className="main-content">
+        <AnimatePresence mode="wait">
+          {currentView === 'home' && <HomeView key="home" />}
+          {currentView === 'movies' && <BrowseView key="movies" type="movies" />}
+          {currentView === 'shows' && <BrowseView key="shows" type="shows" />}
+          {currentView === 'series' && <BrowseView key="series" type="series" />}
+          {currentView === 'mylist' && <MyListView key="mylist" />}
+          {currentView === 'account' && <AccountView key="account" />}
+          {currentView === 'settings' && <SettingsView key="settings" />}
+          {currentView === 'login' && <AuthView key="login" onLogin={handleLogin} />}
+        </AnimatePresence>
+      </div>
       {selectedTitle && <DetailModal />}
       {playerTitle && <VideoPlayer />}
     </AppContext.Provider>
