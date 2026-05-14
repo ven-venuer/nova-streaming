@@ -202,14 +202,9 @@ export default function App() {
     }
   }
 
-  // Fetch latest data from server on mount if logged in (only if local cache is empty)
+  // Fetch latest data from server on every page load (cross-device sync)
   useEffect(() => {
     if (!currentUser?.username) return;
-    // Only fetch from server if local cache is empty (i.e. new device / fresh browser)
-    const localList = myList;
-    const localHistory = watchHistory;
-    const hasLocalData = localList.length > 0 || localHistory.length > 0;
-    if (hasLocalData) return; // Local has data — it's the latest truth
 
     fetch(`${API_BASE}/user/data?username=${encodeURIComponent(currentUser.username)}`)
       .then(r => r.ok ? r.json() : null)
@@ -224,7 +219,7 @@ export default function App() {
           try { localStorage.setItem(userKey(currentUser.username, 'history'), JSON.stringify(data.watchHistory)); } catch {}
         }
       })
-      .catch(() => {});
+      .catch(() => {}); // Offline fallback — local cache still works
   }, []);  // Only on mount
 
   function handleSignOut() {
