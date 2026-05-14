@@ -58,13 +58,40 @@ function HeroSection() {
   );
 }
 
+
 export default function HomeView() {
-  const { catalog } = useContext(AppContext);
+  const { catalog, watchHistory, allTitles, playTitle } = useContext(AppContext);
+
+  // Build continue watching items from history (deduped by ID)
+  const continueItems = [];
+  const seen = new Set();
+  for (const h of (watchHistory || [])) {
+    if (!seen.has(h.id)) {
+      seen.add(h.id);
+      // Try to find full item in catalog, fallback to history entry
+      const full = allTitles.find(t => (t.tmdbId || t.id) === h.id);
+      continueItems.push({
+        ...(full || {}),
+        id: h.id,
+        tmdbId: h.id,
+        type: h.type,
+        title: h.title,
+        poster: full?.poster || h.poster,
+        backdrop: full?.backdrop || h.backdrop,
+        _season: h.season,
+        _episode: h.episode,
+      });
+    }
+    if (continueItems.length >= 20) break;
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
       <HeroSection />
       <div style={{ marginTop: -60, position: 'relative', zIndex: 20 }}>
+        {continueItems.length > 0 && (
+          <ContentRow title="Continue Watching" items={continueItems} icon={<RowIcon Icon={PlayCircle} color="#46d369" />} category="movie" />
+        )}
         <ContentRow title="Trending Now" items={catalog.trending} icon={<RowIcon Icon={TrendingUp} />} category="movie" />
         <ContentRow title="Popular Movies" items={catalog.popularMovies} icon={<RowIcon Icon={Film} />} category="movie" />
         <ContentRow title="Popular TV Shows" items={catalog.popularTV} icon={<RowIcon Icon={Tv} />} category="tv" />

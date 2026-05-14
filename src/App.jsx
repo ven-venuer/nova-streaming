@@ -70,6 +70,10 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem(userKey(dataOwner, 'mylist'))) || []; }
     catch { return []; }
   });
+  const [watchHistory, setWatchHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(userKey(dataOwner, 'history'))) || []; }
+    catch { return []; }
+  });
   const [userSettings, setUserSettings] = useState(() => {
     try { return JSON.parse(localStorage.getItem(userKey(dataOwner, 'settings'))); }
     catch { return null; }
@@ -84,6 +88,9 @@ export default function App() {
     try {
       setMyList(JSON.parse(localStorage.getItem(userKey(dataOwner, 'mylist'))) || []);
     } catch { setMyList([]); }
+    try {
+      setWatchHistory(JSON.parse(localStorage.getItem(userKey(dataOwner, 'history'))) || []);
+    } catch { setWatchHistory([]); }
     try {
       setUserSettings(JSON.parse(localStorage.getItem(userKey(dataOwner, 'settings'))));
     } catch { setUserSettings(null); }
@@ -103,6 +110,11 @@ export default function App() {
     localStorage.setItem(userKey(dataOwner, 'mylist'), JSON.stringify(myList));
   }, [myList, dataOwner]);
 
+  // Persist watchHistory whenever it changes
+  useEffect(() => {
+    localStorage.setItem(userKey(dataOwner, 'history'), JSON.stringify(watchHistory));
+  }, [watchHistory, dataOwner]);
+
   // Persist settings whenever they change
   useEffect(() => {
     if (userSettings) {
@@ -116,6 +128,32 @@ export default function App() {
       localStorage.setItem(userKey(dataOwner, 'profile'), JSON.stringify(userProfile));
     }
   }, [userProfile, dataOwner]);
+
+  // ── Watch History helpers ──
+  const addToHistory = useCallback((item, season, episode, provider) => {
+    setWatchHistory(prev => {
+      const entry = {
+        id: item.tmdbId || item.id,
+        type: item.type,
+        title: item.title,
+        poster: item.poster,
+        backdrop: item.backdrop,
+        season: item.type === 'tv' ? season : undefined,
+        episode: item.type === 'tv' ? episode : undefined,
+        provider: provider || 'videasy',
+        watchedAt: Date.now(),
+      };
+      // Remove duplicate if exists, add to front, cap at 100
+      const filtered = prev.filter(h => !(h.id === entry.id && h.season === entry.season && h.episode === entry.episode));
+      return [entry, ...filtered].slice(0, 100);
+    });
+  }, []);
+
+  const removeFromHistory = useCallback((id, season, episode) => {
+    setWatchHistory(prev => prev.filter(h => !(h.id === id && h.season === season && h.episode === episode)));
+  }, []);
+
+  const clearHistory = useCallback(() => setWatchHistory([]), []);
 
   // ── Auth handlers ──
   function handleLogin(account) {
@@ -162,7 +200,8 @@ export default function App() {
     setPlayerTitle(item);
     setPlayerSeason(season);
     setPlayerEpisode(episode);
-  }, []);
+    addToHistory(item, season, episode);
+  }, [addToHistory]);
 
   // URL Syncing
   const isInitialMount = useRef(true);
@@ -220,6 +259,7 @@ export default function App() {
     playerEpisode, setPlayerEpisode,
     playTitle,
     myList, toggleMyList,
+    watchHistory, addToHistory, removeFromHistory, clearHistory,
     searchQuery, setSearchQuery,
     catalog, allTitles, loading,
     currentUser, handleLogin, handleSignOut,
