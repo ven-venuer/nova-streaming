@@ -1,4 +1,19 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+
+// ── Cloud sync helper ──
+const API_BASE = '/api';
+let syncTimer = null;
+function debouncedSync(username, myList, watchHistory) {
+  if (!username) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    fetch(`${API_BASE}/user/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, myList, watchHistory }),
+    }).catch(() => {});
+  }, 3000);
+}
 import { AnimatePresence } from 'framer-motion';
 import './styles.css';
 import AuthView from './components/AuthView.jsx';
@@ -35,11 +50,19 @@ function userKey(username, key) {
 }
 
 export default function App() {
-  // ── Auth state ──
+  // ── Auth state (recover from any available storage) ──
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('nova-current-user');
-      return saved ? JSON.parse(saved) : null;
+      const saved = localStorage.getItem('nova-current-user')
+        || sessionStorage.getItem('nova-current-user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Sync back to both storages
+        try { localStorage.setItem('nova-current-user', saved); } catch {}
+        try { sessionStorage.setItem('nova-current-user', saved); } catch {}
+        return parsed;
+      }
+      return null;
     } catch { return null; }
   });
 
@@ -105,14 +128,16 @@ export default function App() {
     applyAccentColor(colorKey);
   }, [userSettings]);
 
-  // Persist myList whenever it changes
+  // Persist myList whenever it changes + sync to cloud
   useEffect(() => {
     localStorage.setItem(userKey(dataOwner, 'mylist'), JSON.stringify(myList));
+    debouncedSync(dataOwner, myList, watchHistory);
   }, [myList, dataOwner]);
 
-  // Persist watchHistory whenever it changes
+  // Persist watchHistory whenever it changes + sync to cloud
   useEffect(() => {
     localStorage.setItem(userKey(dataOwner, 'history'), JSON.stringify(watchHistory));
+    debouncedSync(dataOwner, myList, watchHistory);
   }, [watchHistory, dataOwner]);
 
   // Persist settings whenever they change
@@ -156,14 +181,48 @@ export default function App() {
   const clearHistory = useCallback(() => setWatchHistory([]), []);
 
   // ── Auth handlers ──
-  function handleLogin(account) {
-    localStorage.setItem('nova-current-user', JSON.stringify(account));
+  function handleLogin(account, serverData) {
+    const json = JSON.stringify(account);
+    try { localStorage.setItem('nova-current-user', json); } catch {}
+    try { sessionStorage.setItem('nova-current-user', json); } catch {}
     setCurrentUser(account);
     setCurrentView('home');
+
+    // Merge server data into state
+    if (serverData) {
+      if (Array.isArray(serverData.myList) && serverData.myList.length > 0) {
+        setMyList(serverData.myList);
+        try { localStorage.setItem(userKey(account.username, 'mylist'), JSON.stringify(serverData.myList)); } catch {}
+      }
+      if (Array.isArray(serverData.watchHistory) && serverData.watchHistory.length > 0) {
+        setWatchHistory(serverData.watchHistory);
+        try { localStorage.setItem(userKey(account.username, 'history'), JSON.stringify(serverData.watchHistory)); } catch {}
+      }
+    }
   }
 
+  // Fetch latest data from server on mount if logged in
+  useEffect(() => {
+    if (!currentUser?.username) return;
+    fetch(`${API_BASE}/user/data?username=${encodeURIComponent(currentUser.username)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        if (Array.isArray(data.myList) && data.myList.length > 0) {
+          setMyList(data.myList);
+          try { localStorage.setItem(userKey(currentUser.username, 'mylist'), JSON.stringify(data.myList)); } catch {}
+        }
+        if (Array.isArray(data.watchHistory) && data.watchHistory.length > 0) {
+          setWatchHistory(data.watchHistory);
+          try { localStorage.setItem(userKey(currentUser.username, 'history'), JSON.stringify(data.watchHistory)); } catch {}
+        }
+      })
+      .catch(() => {}); // Silently fail — local cache is still available
+  }, []);  // Only on mount
+
   function handleSignOut() {
-    localStorage.removeItem('nova-current-user');
+    try { localStorage.removeItem('nova-current-user'); } catch {}
+    try { sessionStorage.removeItem('nova-current-user'); } catch {}
     setCurrentUser(null);
     // Data will reload as guest via the dataOwner useEffect
     setPlayerTitle(null);
