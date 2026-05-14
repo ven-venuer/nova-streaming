@@ -172,6 +172,19 @@ export default function App() {
     setCurrentView('home');
   }
 
+  // ── Dynamic tab title ──
+  useEffect(() => {
+    if (playerTitle) {
+      const ep = playerTitle.type === 'tv' ? ` — S${playerSeason} E${playerEpisode}` : '';
+      document.title = `${playerTitle.title}${ep} — NOVA`;
+    } else if (selectedTitle) {
+      document.title = `${selectedTitle.title} — NOVA`;
+    } else {
+      const labels = { home: 'Home', movies: 'Movies', shows: 'TV Shows', series: 'Series', mylist: 'My List', account: 'Account', settings: 'Settings', login: 'Sign In' };
+      document.title = `NOVA — ${labels[currentView] || 'Stream Movies & TV'}`;
+    }
+  }, [playerTitle, selectedTitle, currentView, playerSeason, playerEpisode]);
+
   // ── Fetch catalog ──
   useEffect(() => {
     async function load() {
