@@ -190,9 +190,9 @@ export default function MyListView() {
             ) : (
               <div className="browse-grid">
                 {listItems.map((item, i) => (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                  <div key={item.id} className="card-animate" style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}>
                     <TitleCard item={item} />
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}

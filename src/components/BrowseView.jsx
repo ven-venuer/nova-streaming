@@ -53,9 +53,9 @@ export default function BrowseView({ type }) {
       <div style={{ padding: '24px 0' }}>
         <div className="browse-grid">
           {filtered.map((item, i) => (
-            <motion.div key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.6), duration: 0.3 }}>
+            <div key={item.id} className="card-animate" style={{ animationDelay: `${Math.min(i * 20, 400)}ms` }}>
               <TitleCard item={item} />
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
