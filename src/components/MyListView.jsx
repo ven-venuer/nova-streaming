@@ -182,10 +182,18 @@ export default function MyListView() {
           <motion.div key="mylist" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {listItems.length === 0 ? (
               <div className="empty-state">
-                <Film size={64} className="empty-icon" />
+                <Film size={48} className="empty-icon" />
                 <div className="empty-title">Your list is empty</div>
                 <div className="empty-sub">Add movies and shows to your list to watch them later</div>
-                <button className="btn-play" onClick={() => setCurrentView('home')}>BROWSE CONTENT</button>
+                <button onClick={() => setCurrentView('home')} style={{
+                  padding: '10px 28px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.06)', color: 'white', cursor: 'pointer',
+                  fontFamily: 'Bebas Neue', fontSize: 15, letterSpacing: 2, transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-primary)'; e.currentTarget.style.borderColor = 'var(--accent-primary)'; }}
+                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}>
+                  <Film size={14} /> BROWSE CONTENT
+                </button>
               </div>
             ) : (
               <div className="browse-grid">
@@ -204,10 +212,18 @@ export default function MyListView() {
           <motion.div key="continue" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {continueItems.length === 0 ? (
               <div className="empty-state">
-                <Play size={64} className="empty-icon" />
+                <Play size={48} className="empty-icon" />
                 <div className="empty-title">Nothing here yet</div>
                 <div className="empty-sub">Start watching something and it will appear here for easy resuming</div>
-                <button className="btn-play" onClick={() => setCurrentView('home')}>START WATCHING</button>
+                <button onClick={() => setCurrentView('home')} style={{
+                  padding: '10px 28px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.06)', color: 'white', cursor: 'pointer',
+                  fontFamily: 'Bebas Neue', fontSize: 15, letterSpacing: 2, transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-primary)'; e.currentTarget.style.borderColor = 'var(--accent-primary)'; }}
+                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}>
+                  <Play size={14} /> START WATCHING
+                </button>
               </div>
             ) : (
               <div className="browse-grid">
@@ -231,10 +247,18 @@ export default function MyListView() {
           <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {watchHistory.length === 0 ? (
               <div className="empty-state">
-                <History size={64} className="empty-icon" />
+                <History size={48} className="empty-icon" />
                 <div className="empty-title">No watch history</div>
                 <div className="empty-sub">Your viewing history will be recorded here</div>
-                <button className="btn-play" onClick={() => setCurrentView('home')}>BROWSE CONTENT</button>
+                <button onClick={() => setCurrentView('home')} style={{
+                  padding: '10px 28px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'rgba(255,255,255,0.06)', color: 'white', cursor: 'pointer',
+                  fontFamily: 'Bebas Neue', fontSize: 15, letterSpacing: 2, transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-primary)'; e.currentTarget.style.borderColor = 'var(--accent-primary)'; }}
+                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}>
+                  <Film size={14} /> BROWSE CONTENT
+                </button>
               </div>
             ) : (
               <>
