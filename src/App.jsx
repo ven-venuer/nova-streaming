@@ -3,7 +3,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 // ── Cloud sync helper ──
 const API_BASE = '/api';
 let syncTimer = null;
-function syncToCloud(username, myList, watchHistory) {
+function syncToCloud(username, myList, watchHistory, settings, profile) {
   if (!username) return;
   // Cancel any pending debounced sync and push immediately
   clearTimeout(syncTimer);
@@ -11,7 +11,7 @@ function syncToCloud(username, myList, watchHistory) {
     fetch(`${API_BASE}/user/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, myList, watchHistory }),
+      body: JSON.stringify({ username, myList, watchHistory, settings, profile }),
     }).catch(() => {});
   }, 500); // 500ms debounce — fast enough to beat a reload, light enough to batch rapid changes
 }
@@ -132,26 +132,28 @@ export default function App() {
   // Persist myList whenever it changes + sync to cloud
   useEffect(() => {
     localStorage.setItem(userKey(dataOwner, 'mylist'), JSON.stringify(myList));
-    syncToCloud(dataOwner, myList, watchHistory);
+    syncToCloud(dataOwner, myList, watchHistory, userSettings, userProfile);
   }, [myList, dataOwner]);
 
   // Persist watchHistory whenever it changes + sync to cloud
   useEffect(() => {
     localStorage.setItem(userKey(dataOwner, 'history'), JSON.stringify(watchHistory));
-    syncToCloud(dataOwner, myList, watchHistory);
+    syncToCloud(dataOwner, myList, watchHistory, userSettings, userProfile);
   }, [watchHistory, dataOwner]);
 
-  // Persist settings whenever they change
+  // Persist settings whenever they change + sync to cloud
   useEffect(() => {
     if (userSettings) {
       localStorage.setItem(userKey(dataOwner, 'settings'), JSON.stringify(userSettings));
+      syncToCloud(dataOwner, myList, watchHistory, userSettings, userProfile);
     }
   }, [userSettings, dataOwner]);
 
-  // Persist profile whenever it changes
+  // Persist profile whenever it changes + sync to cloud
   useEffect(() => {
     if (userProfile) {
       localStorage.setItem(userKey(dataOwner, 'profile'), JSON.stringify(userProfile));
+      syncToCloud(dataOwner, myList, watchHistory, userSettings, userProfile);
     }
   }, [userProfile, dataOwner]);
 
@@ -199,6 +201,15 @@ export default function App() {
         setWatchHistory(serverData.watchHistory);
         try { localStorage.setItem(userKey(account.username, 'history'), JSON.stringify(serverData.watchHistory)); } catch {}
       }
+      if (serverData.settings) {
+        setUserSettings(serverData.settings);
+        applyAccentColor(serverData.settings.accentColor || 'red');
+        try { localStorage.setItem(userKey(account.username, 'settings'), JSON.stringify(serverData.settings)); } catch {}
+      }
+      if (serverData.profile) {
+        setUserProfile(serverData.profile);
+        try { localStorage.setItem(userKey(account.username, 'profile'), JSON.stringify(serverData.profile)); } catch {}
+      }
     }
   }
 
@@ -217,6 +228,15 @@ export default function App() {
         if (Array.isArray(data.watchHistory)) {
           setWatchHistory(data.watchHistory);
           try { localStorage.setItem(userKey(currentUser.username, 'history'), JSON.stringify(data.watchHistory)); } catch {}
+        }
+        if (data.settings) {
+          setUserSettings(data.settings);
+          applyAccentColor(data.settings.accentColor || 'red');
+          try { localStorage.setItem(userKey(currentUser.username, 'settings'), JSON.stringify(data.settings)); } catch {}
+        }
+        if (data.profile) {
+          setUserProfile(data.profile);
+          try { localStorage.setItem(userKey(currentUser.username, 'profile'), JSON.stringify(data.profile)); } catch {}
         }
       })
       .catch(() => {}); // Offline fallback — local cache still works

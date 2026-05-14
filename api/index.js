@@ -157,7 +157,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({
       success: true,
       account: { username: user.username, email: user.email, plan: user.plan || 'Premium', createdAt: user.createdAt },
-      data: { myList: user.myList || [], watchHistory: user.watchHistory || [] },
+      data: { myList: user.myList || [], watchHistory: user.watchHistory || [], settings: user.settings || null, profile: user.profile || null },
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -165,16 +165,18 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// ── Sync user data (myList + watchHistory) ──
+// ── Sync user data (myList + watchHistory + settings + profile) ──
 app.post('/api/user/sync', async (req, res) => {
   try {
-    const { username, myList, watchHistory } = req.body;
+    const { username, myList, watchHistory, settings, profile } = req.body;
     if (!username) return res.status(400).json({ error: 'Username required.' });
 
     const db = await getDb();
     const update = {};
     if (Array.isArray(myList)) update.myList = myList;
     if (Array.isArray(watchHistory)) update.watchHistory = watchHistory.slice(0, 100);
+    if (settings && typeof settings === 'object') update.settings = settings;
+    if (profile && typeof profile === 'object') update.profile = profile;
 
     if (Object.keys(update).length === 0) return res.json({ success: true });
 
@@ -198,11 +200,11 @@ app.get('/api/user/data', async (req, res) => {
     const db = await getDb();
     const user = await db.collection('users').findOne(
       { username: { $regex: new RegExp(`^${username}$`, 'i') } },
-      { projection: { myList: 1, watchHistory: 1, _id: 0 } }
+      { projection: { myList: 1, watchHistory: 1, settings: 1, profile: 1, _id: 0 } }
     );
 
     if (!user) return res.status(404).json({ error: 'User not found.' });
-    res.json({ myList: user.myList || [], watchHistory: user.watchHistory || [] });
+    res.json({ myList: user.myList || [], watchHistory: user.watchHistory || [], settings: user.settings || null, profile: user.profile || null });
   } catch (err) {
     console.error('Fetch data error:', err);
     res.status(500).json({ error: 'Failed to fetch data.' });
