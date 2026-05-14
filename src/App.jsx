@@ -3,8 +3,9 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 // ── Cloud sync helper ──
 const API_BASE = '/api';
 let syncTimer = null;
-function debouncedSync(username, myList, watchHistory) {
+function syncToCloud(username, myList, watchHistory) {
   if (!username) return;
+  // Cancel any pending debounced sync and push immediately
   clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     fetch(`${API_BASE}/user/sync`, {
@@ -12,7 +13,7 @@ function debouncedSync(username, myList, watchHistory) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, myList, watchHistory }),
     }).catch(() => {});
-  }, 3000);
+  }, 500); // 500ms debounce — fast enough to beat a reload, light enough to batch rapid changes
 }
 import { AnimatePresence } from 'framer-motion';
 import './styles.css';
@@ -131,13 +132,13 @@ export default function App() {
   // Persist myList whenever it changes + sync to cloud
   useEffect(() => {
     localStorage.setItem(userKey(dataOwner, 'mylist'), JSON.stringify(myList));
-    debouncedSync(dataOwner, myList, watchHistory);
+    syncToCloud(dataOwner, myList, watchHistory);
   }, [myList, dataOwner]);
 
   // Persist watchHistory whenever it changes + sync to cloud
   useEffect(() => {
     localStorage.setItem(userKey(dataOwner, 'history'), JSON.stringify(watchHistory));
-    debouncedSync(dataOwner, myList, watchHistory);
+    syncToCloud(dataOwner, myList, watchHistory);
   }, [watchHistory, dataOwner]);
 
   // Persist settings whenever they change
@@ -201,23 +202,29 @@ export default function App() {
     }
   }
 
-  // Fetch latest data from server on mount if logged in
+  // Fetch latest data from server on mount if logged in (only if local cache is empty)
   useEffect(() => {
     if (!currentUser?.username) return;
+    // Only fetch from server if local cache is empty (i.e. new device / fresh browser)
+    const localList = myList;
+    const localHistory = watchHistory;
+    const hasLocalData = localList.length > 0 || localHistory.length > 0;
+    if (hasLocalData) return; // Local has data — it's the latest truth
+
     fetch(`${API_BASE}/user/data?username=${encodeURIComponent(currentUser.username)}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data) return;
-        if (Array.isArray(data.myList) && data.myList.length > 0) {
+        if (Array.isArray(data.myList)) {
           setMyList(data.myList);
           try { localStorage.setItem(userKey(currentUser.username, 'mylist'), JSON.stringify(data.myList)); } catch {}
         }
-        if (Array.isArray(data.watchHistory) && data.watchHistory.length > 0) {
+        if (Array.isArray(data.watchHistory)) {
           setWatchHistory(data.watchHistory);
           try { localStorage.setItem(userKey(currentUser.username, 'history'), JSON.stringify(data.watchHistory)); } catch {}
         }
       })
-      .catch(() => {}); // Silently fail — local cache is still available
+      .catch(() => {});
   }, []);  // Only on mount
 
   function handleSignOut() {
