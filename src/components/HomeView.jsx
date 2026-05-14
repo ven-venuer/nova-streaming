@@ -65,18 +65,18 @@ export default function HomeView() {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
       <HeroSection />
       <div style={{ marginTop: -60, position: 'relative', zIndex: 20 }}>
-        <ContentRow title="Trending Now" items={catalog.trending} icon={<RowIcon Icon={TrendingUp} />} />
-        <ContentRow title="Popular Movies" items={catalog.popularMovies} icon={<RowIcon Icon={Film} />} />
-        <ContentRow title="Popular TV Shows" items={catalog.popularTV} icon={<RowIcon Icon={Tv} />} />
-        <ContentRow title="Top Rated Movies" items={catalog.topRatedMovies} icon={<RowIcon Icon={Star} color="var(--accent-gold)" />} />
-        <ContentRow title="Now Playing" items={catalog.nowPlaying} icon={<RowIcon Icon={PlayCircle} />} />
-        <ContentRow title="Top Rated TV" items={catalog.topRatedTV} icon={<RowIcon Icon={Trophy} color="var(--accent-gold)" />} />
-        <ContentRow title="Action Movies" items={catalog.actionMovies} icon={<RowIcon Icon={Zap} color="#ff6b35" />} />
-        <ContentRow title="Sci-Fi" items={catalog.sciFiMovies} icon={<RowIcon Icon={Rocket} color="#4facfe" />} />
-        <ContentRow title="Comedy" items={catalog.comedyMovies} icon={<RowIcon Icon={Laugh} color="#46d369" />} />
-        <ContentRow title="Horror" items={catalog.horrorMovies} icon={<RowIcon Icon={Skull} color="#9b59b6" />} />
-        <ContentRow title="Upcoming" items={catalog.upcoming} icon={<RowIcon Icon={CalendarDays} />} />
-        <ContentRow title="Airing Today" items={catalog.airingToday} icon={<RowIcon Icon={Radio} color="#4facfe" />} landscape />
+        <ContentRow title="Trending Now" items={catalog.trending} icon={<RowIcon Icon={TrendingUp} />} category="movie" />
+        <ContentRow title="Popular Movies" items={catalog.popularMovies} icon={<RowIcon Icon={Film} />} category="movie" />
+        <ContentRow title="Popular TV Shows" items={catalog.popularTV} icon={<RowIcon Icon={Tv} />} category="tv" />
+        <ContentRow title="Top Rated Movies" items={catalog.topRatedMovies} icon={<RowIcon Icon={Star} color="var(--accent-gold)" />} category="movie" />
+        <ContentRow title="Now Playing" items={catalog.nowPlaying} icon={<RowIcon Icon={PlayCircle} />} category="movie" />
+        <ContentRow title="Top Rated TV" items={catalog.topRatedTV} icon={<RowIcon Icon={Trophy} color="var(--accent-gold)" />} category="tv" />
+        <ContentRow title="Action Movies" items={catalog.actionMovies} icon={<RowIcon Icon={Zap} color="#ff6b35" />} category="movie" />
+        <ContentRow title="Sci-Fi" items={catalog.sciFiMovies} icon={<RowIcon Icon={Rocket} color="#4facfe" />} category="movie" />
+        <ContentRow title="Comedy" items={catalog.comedyMovies} icon={<RowIcon Icon={Laugh} color="#46d369" />} category="movie" />
+        <ContentRow title="Horror" items={catalog.horrorMovies} icon={<RowIcon Icon={Skull} color="#9b59b6" />} category="movie" />
+        <ContentRow title="Upcoming" items={catalog.upcoming} icon={<RowIcon Icon={CalendarDays} />} category="movie" />
+        <ContentRow title="Airing Today" items={catalog.airingToday} icon={<RowIcon Icon={Radio} color="#4facfe" />} landscape category="tv" />
       </div>
     </motion.div>
   );

@@ -12,6 +12,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [notifRead, setNotifRead] = useState(false);
   const debounceRef = useRef(null);
 
   useEffect(() => {
@@ -98,7 +99,7 @@ export default function Navbar() {
         <div style={{ position: 'relative' }}>
           <div className="nav-icon" onClick={() => { setNotifOpen(!notifOpen); setSearchOpen(false); setProfileOpen(false); }}>
             <Bell size={18} />
-            <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-primary)' }} />
+            {!notifRead && <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-primary)' }} />}
           </div>
           <AnimatePresence>
             {notifOpen && (
@@ -119,8 +120,8 @@ export default function Navbar() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4 }}>Enjoy the ultimate cinematic streaming experience.</div>
                   </div>
                 </div>
-                <div style={{ padding: '12px 16px', textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
-                  Mark all as read
+                <div style={{ padding: '12px 16px', textAlign: 'center', fontSize: 12, color: notifRead ? '#46d369' : 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => !notifRead && (e.currentTarget.style.color = 'white')} onMouseLeave={e => !notifRead && (e.currentTarget.style.color = 'var(--text-muted)')} onClick={() => setNotifRead(true)}>
+                  {notifRead ? '✓ All caught up' : 'Mark all as read'}
                 </div>
               </motion.div>
             )}
@@ -130,7 +131,7 @@ export default function Navbar() {
         {/* Profile */}
         <div style={{ position: 'relative' }}>
           <div className="avatar" onClick={() => { setProfileOpen(!profileOpen); setSearchOpen(false); setNotifOpen(false); }}>
-            {currentUser ? currentUser.username.substring(0, 2).toUpperCase() : '👤'}
+            {currentUser ? currentUser.username.substring(0, 2).toUpperCase() : <User size={16} />}
           </div>
           <AnimatePresence>
             {profileOpen && (

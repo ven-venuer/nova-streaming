@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Plus, ThumbsUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AppContext } from '../App.jsx';
@@ -6,6 +6,7 @@ import { AppContext } from '../App.jsx';
 function TitleCard({ item, landscape }) {
   const { setSelectedTitle, playTitle, toggleMyList, myList } = useContext(AppContext);
   const inList = myList.includes(item.id);
+  const [liked, setLiked] = useState(false);
   const scoreColor = item.score >= 8.5 ? 'var(--accent-gold)' : item.score >= 7 ? '#46d369' : 'var(--text-muted)';
   const imgSrc = landscape ? (item.thumbnail || item.backdrop) : (item.poster || item.thumbnail);
 
@@ -27,7 +28,7 @@ function TitleCard({ item, landscape }) {
           <button className="hover-action-btn" onClick={e => { e.stopPropagation(); toggleMyList(item.id); }} style={inList ? { background: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' } : {}}>
             <Plus size={14} style={inList ? { transform: 'rotate(45deg)' } : {}} />
           </button>
-          <button className="hover-action-btn"><ThumbsUp size={14} /></button>
+          <button className="hover-action-btn" onClick={e => { e.stopPropagation(); setLiked(!liked); }} style={liked ? { background: '#46d369', borderColor: '#46d369' } : {}}><ThumbsUp size={14} /></button>
           <button className="hover-action-btn" onClick={e => { e.stopPropagation(); setSelectedTitle(item); }}><ChevronDown size={14} /></button>
         </div>
         <div style={{ marginTop: 6 }}>{(item.genreNames || item.genre || []).slice(0,2).map(g => <span key={g} className="genre-pill">{g}</span>)}</div>
@@ -36,7 +37,8 @@ function TitleCard({ item, landscape }) {
   );
 }
 
-export default function ContentRow({ title, items, icon, landscape }) {
+export default function ContentRow({ title, items, icon, landscape, category }) {
+  const { setCurrentView } = useContext(AppContext);
   const ref = useRef(null);
   const scroll = (dir) => {
     if (ref.current) ref.current.scrollBy({ left: dir * 600, behavior: 'smooth' });
@@ -44,11 +46,18 @@ export default function ContentRow({ title, items, icon, landscape }) {
 
   if (!items || items.length === 0) return null;
 
+  const handleSeeAll = () => {
+    if (category === 'tv') setCurrentView('shows');
+    else if (category === 'movie') setCurrentView('movies');
+    else setCurrentView('movies'); // default fallback
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <motion.div className="content-row" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5 }}>
       <div className="row-header">
         <div className="row-title">{icon} {title}</div>
-        <div className="row-see-all">See All →</div>
+        <div className="row-see-all" onClick={handleSeeAll}>See All →</div>
       </div>
       <button className="row-arrow left" onClick={() => scroll(-1)}><ChevronLeft size={24} /></button>
       <div className="row-scroll-container no-scrollbar" ref={ref}>
