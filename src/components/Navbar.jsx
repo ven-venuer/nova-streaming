@@ -5,7 +5,7 @@ import { AppContext } from '../App.jsx';
 import { searchMulti, img } from '../tmdb.js';
 
 export default function Navbar() {
-  const { currentView, setCurrentView, searchQuery, setSearchQuery, setSelectedTitle, currentUser, handleSignOut } = useContext(AppContext);
+  const { currentView, setCurrentView, searchQuery, setSearchQuery, setSelectedTitle, currentUser, handleSignOut, userSettings } = useContext(AppContext);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -29,7 +29,7 @@ export default function Navbar() {
     }
     setSearching(true);
     debounceRef.current = setTimeout(async () => {
-      const results = await searchMulti(searchQuery);
+      const results = await searchMulti(searchQuery, userSettings?.matureContent || false);
       setSearchResults(results);
       setSearching(false);
     }, 400);

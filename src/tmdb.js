@@ -70,7 +70,7 @@ export const REVERSE_GENRE_MAP = Object.fromEntries(
 // ── Fetch functions ──
 
 export async function fetchTrending() {
-  const data = await get('/trending/all/week?language=en-US');
+  const data = await get('/trending/all/week?language=en-US&include_adult=false');
   return data.results.map(item => normalize(item));
 }
 
@@ -86,7 +86,7 @@ export async function discoverMedia(type, page = 1, genreId = '', sort = 'popula
   // Let's explicitly handle title sorting for TV
   if (sort === 'title') sortBy = isTV ? 'name.asc' : 'original_title.asc';
 
-  let url = `${endpoint}?language=en-US&page=${page}&sort_by=${sortBy}`;
+  let url = `${endpoint}?language=en-US&page=${page}&sort_by=${sortBy}&include_adult=false`;
   if (genreId) url += `&with_genres=${genreId}`;
   if (type === 'filipino') url += `&with_origin_country=PH`;
   if (type === 'kdrama') url += `&with_origin_country=KR`;
@@ -97,59 +97,59 @@ export async function discoverMedia(type, page = 1, genreId = '', sort = 'popula
 }
 
 export async function fetchPopularMovies() {
-  const data = await get('/movie/popular?language=en-US&page=1');
+  const data = await get('/movie/popular?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function fetchTopRatedMovies() {
-  const data = await get('/movie/top_rated?language=en-US&page=1');
+  const data = await get('/movie/top_rated?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function fetchUpcomingMovies() {
-  const data = await get('/movie/upcoming?language=en-US&page=1');
+  const data = await get('/movie/upcoming?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function fetchNowPlayingMovies() {
-  const data = await get('/movie/now_playing?language=en-US&page=1');
+  const data = await get('/movie/now_playing?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function fetchPopularTV() {
-  const data = await get('/tv/popular?language=en-US&page=1');
+  const data = await get('/tv/popular?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function fetchTopRatedTV() {
-  const data = await get('/tv/top_rated?language=en-US&page=1');
+  const data = await get('/tv/top_rated?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function fetchAiringTodayTV() {
-  const data = await get('/tv/airing_today?language=en-US&page=1');
+  const data = await get('/tv/airing_today?language=en-US&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function fetchGenreMovies(genreId) {
-  const data = await get(`/discover/movie?language=en-US&sort_by=popularity.desc&with_genres=${genreId}&page=1`);
+  const data = await get(`/discover/movie?language=en-US&sort_by=popularity.desc&with_genres=${genreId}&page=1&include_adult=false`);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function fetchFilipinoMedia() {
   // Fetch popular TV shows/movies from the Philippines
-  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=PH&page=1');
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=PH&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function fetchKDrama() {
-  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=KR&page=1');
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=KR&page=1&include_adult=false');
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function fetchAnime() {
-  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=JP&with_genres=16&page=1');
-  return data.results.map(item => normalize(item, 'tv'));
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=JP&with_genres=16&page=1&include_adult=false&without_genres=10768'); // Exclude War & Politics to sometimes filter out heavy adult/ecchi tagged incorrectly
+  return data.results.map(item => normalize(item, 'tv')).filter(item => !item.title.toLowerCase().includes('overflow') && !item.title.toLowerCase().includes('harem') && !item.title.toLowerCase().includes('ecchi'));
 }
 
 export async function fetchMovieDetails(id) {
@@ -187,9 +187,9 @@ export async function fetchTVSeasonEpisodes(tvId, seasonNumber) {
   }));
 }
 
-export async function searchMulti(query) {
+export async function searchMulti(query, includeAdult = false) {
   if (!query || query.trim().length < 2) return [];
-  const data = await get(`/search/multi?language=en-US&query=${encodeURIComponent(query)}&page=1`);
+  const data = await get(`/search/multi?language=en-US&query=${encodeURIComponent(query)}&page=1&include_adult=${includeAdult}`);
   return data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv').map(item => normalize(item));
 }
 
