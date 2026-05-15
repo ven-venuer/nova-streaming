@@ -1,56 +1,16 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { AppContext } from '../App.jsx';
 import { getMovieEmbedUrl, getTVEmbedUrl, PROVIDERS } from '../tmdb.js';
-import HlsPlayer from './HlsPlayer.jsx';
 
 export default function VideoPlayer() {
   const { playerTitle: item, setPlayerTitle, playerSeason, playerEpisode, setPlayerSeason, setPlayerEpisode } = useContext(AppContext);
   const containerRef = useRef(null);
-  const videoRef = useRef(null);
-  const hlsRef = useRef(null);
   const [provider, setProvider] = useState('videasy');
-  const [streamUrl, setStreamUrl] = useState(null);
-  const [loadingStream, setLoadingStream] = useState(false);
-  const [streamError, setStreamError] = useState(null);
-  const [useHls, setUseHls] = useState(false);
 
   const embedUrl = item.type === 'tv'
     ? getTVEmbedUrl(item.tmdbId || item.id, playerSeason, playerEpisode, provider)
     : getMovieEmbedUrl(item.tmdbId || item.id, provider);
-
-  // Fetch m3u8 stream when NOVA Native is selected
-  useEffect(() => {
-    const fetchStream = async () => {
-      if (!item?.tmdbId || provider !== 'nova_native') return;
-      
-      setLoadingStream(true);
-      setStreamError(null);
-      setUseHls(false);
-      setStreamUrl(null);
-      
-      try {
-        const tmdbId = item.tmdbId || item.id;
-        const title = item.title || '';
-        const response = await fetch(`/api/stream-source?tmdbId=${tmdbId}&type=${item.type}&title=${encodeURIComponent(title)}`);
-        const data = await response.json();
-        
-        if (data.success && data.url) {
-          setStreamUrl(data.url);
-          setUseHls(true);
-        } else {
-          setStreamError(data.error || 'Failed to get stream');
-        }
-      } catch (err) {
-        console.log('Stream API error:', err);
-        setStreamError(err.message);
-      } finally {
-        setLoadingStream(false);
-      }
-    };
-    
-    fetchStream();
-  }, [provider, item?.tmdbId, item?.type, item?.title]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -113,7 +73,7 @@ export default function VideoPlayer() {
         }}>
           <select
             value={provider}
-            onChange={e => { setProvider(e.target.value); setUseHls(false); }}
+            onChange={e => setProvider(e.target.value)}
             style={{
               background: 'transparent', border: 'none', color: 'white',
               fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500, outline: 'none',
@@ -121,7 +81,7 @@ export default function VideoPlayer() {
             }}
           >
             {PROVIDERS.map(p => (
-              <option key={p.id} value={p.id} style={{ background: '#111', color: p.id === 'nova_native' ? '#e50914' : 'white', fontWeight: p.id === 'nova_native' ? 600 : 400 }}>
+              <option key={p.id} value={p.id} style={{ background: '#111', color: 'white' }}>
                 {p.name}
               </option>
             ))}
@@ -134,50 +94,17 @@ export default function VideoPlayer() {
         </div>
       </div>
 
-      {/* Loading state for m3u8 */}
-      {loadingStream && provider === 'nova_native' && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-          <Loader2 size={48} color="#e50914" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-          <div style={{ color: '#a0a0b8', fontSize: 14 }}>Extracting Raw Stream...</div>
-        </div>
-      )}
-
-      {/* Error state for m3u8 */}
-      {streamError && provider === 'nova_native' && !loadingStream && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-          <div style={{ color: '#e50914', fontSize: 16 }}>Failed to load stream</div>
-          <div style={{ color: '#a0a0b8', fontSize: 13 }}>{streamError}</div>
-          <button 
-            onClick={() => setProvider('videasy')}
-            style={{ padding: '8px 16px', background: '#e50914', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-          >
-            Switch to VidEasy
-          </button>
-        </div>
-      )}
-
-      {/* HLS Video Player */}
-      {useHls && streamUrl && !loadingStream && (
-        <div style={{ flex: 1, width: '100%', height: '100%' }}>
-          <HlsPlayer src={streamUrl} />
-        </div>
-      )}
-
-      {/* Fallback to iframe */}
-      {(!useHls || !streamUrl || provider !== 'nova_native') && !loadingStream && (
-        <iframe
-          src={embedUrl}
-          style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
-          allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-          allowFullScreen
-          webkitallowfullscreen="true"
-          mozallowfullscreen="true"
-          frameBorder="0"
-          title={item.title}
-        />
-      )}
+      <iframe
+        src={embedUrl}
+        style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
+        allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+        allowFullScreen
+        webkitallowfullscreen="true"
+        mozallowfullscreen="true"
+        frameBorder="0"
+        title={item.title}
+      />
 
     </div>
   );
 }
-
