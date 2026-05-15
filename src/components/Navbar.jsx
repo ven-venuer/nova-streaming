@@ -52,7 +52,7 @@ export default function Navbar() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 2L20 12L4 22V2Z"/></svg>
           NOVA
         </div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', alignSelf: 'flex-end', marginTop: -6, letterSpacing: 0.5, fontFamily: 'DM Sans', opacity: 0.5 }}>Made by Reuven :)</div>
+        <div style={{ fontSize: 9, color: 'white', fontWeight: 'bold', alignSelf: 'flex-end', marginTop: -6, letterSpacing: 0.5, fontFamily: 'DM Sans', opacity: 0.9 }}>Made by Reuven :)</div>
       </div>
       <ul className="nav-links">
         {links.map(l => (
