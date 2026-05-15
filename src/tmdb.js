@@ -211,14 +211,14 @@ export async function searchMulti(query, includeAdult = false) {
 // ── Embed URLs ──
 export const PROVIDERS = [
   { id: 'videasy', name: 'VidEasy (Default)', base: 'https://player.videasy.net' },
-  { id: 'vidsrc', name: 'VidSrc', base: 'https://vidsrc.me/embed' },
-  { id: 'vidking', name: 'VidKing', base: 'https://embed.su/embed' },
+  { id: 'vidsrc', name: 'VidSrc', base: 'https://vidsrc.to/embed' },
+  { id: 'vidking', name: 'VidKing', base: 'https://www.vidking.net/embed' },
 ];
 
 export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {
   if (provider === 'videasy') return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
-  if (provider === 'vidsrc') return `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`;
-  if (provider === 'vidking') return `https://embed.su/embed/movie/${tmdbId}`;
+  if (provider === 'vidsrc') return `https://vidsrc.to/embed/movie/${tmdbId}`;
+  if (provider === 'vidking') return `https://www.vidking.net/embed/movie/${tmdbId}?color=e50914&autoPlay=true`;
   return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
 }
 
@@ -228,8 +228,15 @@ export function getTVEmbedUrl(tmdbId, season, episode, provider = 'videasy') {
     if (season && episode) return `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?${baseParams}`;
     return `https://player.videasy.net/tv/${tmdbId}?${baseParams}`;
   }
-  if (provider === 'vidsrc') return `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
-  if (provider === 'vidking') return `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}`;
+  if (provider === 'vidsrc') {
+    if (season && episode) return `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
+    return `https://vidsrc.to/embed/tv/${tmdbId}`;
+  }
+  if (provider === 'vidking') {
+    const params = '?color=e50914&autoPlay=true&nextEpisode=true&episodeSelector=true';
+    if (season && episode) return `https://www.vidking.net/embed/tv/${tmdbId}/${season}/${episode}${params}`;
+    return `https://www.vidking.net/embed/tv/${tmdbId}${params}`;
+  }
   
   return `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=e50914`;
 }
