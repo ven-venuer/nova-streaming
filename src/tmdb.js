@@ -216,6 +216,7 @@ export const PROVIDERS = [
   { id: 'vidphantom', name: 'VidPhantom', base: 'https://vidphantom.com' },
   { id: 'zenith', name: 'Zenith', base: 'https://movie-scraper-sooty.vercel.app' },
   { id: 'nova_native', name: 'NOVA Native (HLS)', base: 'internal' },
+  { id: 'flixquest', name: 'FlixQuest (vixsrc)', base: 'https://flixquest-scraper-five.vercel.app' },
 ];
 
 export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {

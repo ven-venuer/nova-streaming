@@ -7,10 +7,63 @@ export default function VideoPlayer() {
   const { playerTitle: item, setPlayerTitle, playerSeason, playerEpisode, setPlayerSeason, setPlayerEpisode } = useContext(AppContext);
   const containerRef = useRef(null);
   const [provider, setProvider] = useState('videasy');
+  const [streamUrl, setStreamUrl] = useState(null);
+  const [useHls, setUseHls] = useState(false);
+  const [loadingStream, setLoadingStream] = useState(false);
+  const [streamError, setStreamError] = useState(null);
 
   const embedUrl = item.type === 'tv'
     ? getTVEmbedUrl(item.tmdbId || item.id, playerSeason, playerEpisode, provider)
     : getMovieEmbedUrl(item.tmdbId || item.id, provider);
+
+  useEffect(() => {
+    setStreamUrl(null);
+    setUseHls(false);
+    setLoadingStream(false);
+    setStreamError(null);
+  }, [provider, playerSeason, playerEpisode]);
+
+  useEffect(() => {
+    const fetchStream = async () => {
+      if (!item?.tmdbId || (provider !== 'nova_native' && provider !== 'flixquest')) return;
+      
+      setLoadingStream(true);
+      setStreamError(null);
+      let data;
+      
+      try {
+        if (provider === 'nova_native') {
+          const response = await fetch(`/api/stream-source?tmdbId=${item.tmdbId}&type=${item.type}&title=${encodeURIComponent(item.title)}`);
+          data = await response.json();
+          if (data.success && data.url) {
+            setStreamUrl(data.url);
+            setUseHls(true);
+          } else {
+            setStreamError(data.error || 'Failed to get stream');
+          }
+        } else if (provider === 'flixquest') {
+          const url = item.type === 'tv' 
+            ? `https://flixquest-scraper-five.vercel.app/vixsrc/stream-tv?tmdbId=${item.tmdbId}&season=${playerSeason || 1}&episode=${playerEpisode || 1}`
+            : `https://flixquest-scraper-five.vercel.app/vixsrc/stream-movie?tmdbId=${item.tmdbId}`;
+            
+          const response = await fetch(url);
+          data = await response.json();
+          
+          if (data.success && data.links && data.links.length > 0) {
+            setStreamUrl(data.links[0].url);
+            setUseHls(true);
+          } else {
+            setStreamError(data.error || 'No streams found for this media');
+          }
+        }
+      } catch (err) {
+        setStreamError('Connection error');
+      } finally {
+        setLoadingStream(false);
+      }
+    };
+    fetchStream();
+  }, [provider, item.tmdbId, item.type, item.title, playerSeason, playerEpisode]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -26,8 +79,6 @@ export default function VideoPlayer() {
     const handleMessage = (event) => {
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        
-        // Attempt to generically capture season/episode change events from any provider
         const s = data?.season || data?.data?.season || data?.detail?.season || data?.data?.last_season_watched;
         const e = data?.episode || data?.data?.episode || data?.detail?.episode || data?.data?.last_episode_watched;
 
@@ -35,9 +86,7 @@ export default function VideoPlayer() {
           setPlayerSeason(Number(s));
           setPlayerEpisode(Number(e));
         }
-      } catch (e) {
-        // Not JSON
-      }
+      } catch (e) {}
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
@@ -48,7 +97,6 @@ export default function VideoPlayer() {
       position: 'fixed', inset: 0, zIndex: 3000,
       background: 'black', display: 'flex', flexDirection: 'column',
     }}>
-      {/* Top bar */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
         padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16,
@@ -65,7 +113,6 @@ export default function VideoPlayer() {
           </div>
         </div>
 
-        {/* Provider selection */}
         <div style={{
           display: 'flex', alignItems: 'center',
           background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: 6,
@@ -81,7 +128,7 @@ export default function VideoPlayer() {
             }}
           >
             {PROVIDERS.map(p => (
-              <option key={p.id} value={p.id} style={{ background: '#111', color: 'white' }}>
+              <option key={p.id} value={p.id} style={{ background: '#111', color: (p.id === 'nova_native' || p.id === 'flixquest') ? '#e50914' : 'white', fontWeight: (p.id === 'nova_native' || p.id === 'flixquest') ? 600 : 400 }}>
                 {p.name}
               </option>
             ))}
@@ -94,16 +141,48 @@ export default function VideoPlayer() {
         </div>
       </div>
 
-      <iframe
-        src={embedUrl}
-        style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
-        allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-        allowFullScreen
-        webkitallowfullscreen="true"
-        mozallowfullscreen="true"
-        frameBorder="0"
-        title={item.title}
-      />
+      {/* Loading state for m3u8 */}
+      {loadingStream && (provider === 'nova_native' || provider === 'flixquest') && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <Loader2 size={48} color="#e50914" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+          <div style={{ color: '#a0a0b8', fontSize: 14 }}>Extracting Raw Stream...</div>
+        </div>
+      )}
+
+      {/* Error state for m3u8 */}
+      {streamError && (provider === 'nova_native' || provider === 'flixquest') && !loadingStream && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <div style={{ color: '#e50914', fontSize: 16 }}>Failed to load stream</div>
+          <div style={{ color: '#a0a0b8', fontSize: 13 }}>{streamError}</div>
+          <button 
+            onClick={() => setProvider('videasy')}
+            style={{ padding: '8px 16px', background: '#e50914', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          >
+            Switch to VidEasy
+          </button>
+        </div>
+      )}
+
+      {/* HLS Video Player */}
+      {useHls && streamUrl && !loadingStream && (
+        <div style={{ flex: 1, width: '100%', height: '100%' }}>
+          <HlsPlayer src={streamUrl} />
+        </div>
+      )}
+
+      {/* Fallback to iframe */}
+      {(!useHls || !streamUrl || (provider !== 'nova_native' && provider !== 'flixquest')) && !loadingStream && (
+        <iframe
+          src={embedUrl}
+          style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
+          allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+          allowFullScreen
+          webkitallowfullscreen="true"
+          mozallowfullscreen="true"
+          frameBorder="0"
+          title={item.title}
+        />
+      )}
 
     </div>
   );
