@@ -214,6 +214,7 @@ export const PROVIDERS = [
   { id: 'vidsrc', name: 'VidSrc', base: 'https://vidsrc.to/embed' },
   { id: 'vidking', name: 'VidKing', base: 'https://www.vidking.net/embed' },
   { id: 'vidphantom', name: 'VidPhantom', base: 'https://vidphantom.com' },
+  { id: 'zenith', name: 'Zenith', base: 'https://movie-scraper-sooty.vercel.app' },
 ];
 
 export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {
@@ -221,6 +222,7 @@ export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {
   if (provider === 'vidsrc') return `https://vidsrc.to/embed/movie/${tmdbId}`;
   if (provider === 'vidking') return `https://www.vidking.net/embed/movie/${tmdbId}?color=e50914&autoPlay=true`;
   if (provider === 'vidphantom') return `https://vidphantom.com/movie/${tmdbId}?primaryColor=e50914&accentColor=e50914&autoplay=true&nextbutton=true`;
+  if (provider === 'zenith') return `https://movie-scraper-sooty.vercel.app/?id=${tmdbId}`;
   return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
 }
 
@@ -243,6 +245,10 @@ export function getTVEmbedUrl(tmdbId, season, episode, provider = 'videasy') {
     const params = '?primaryColor=e50914&accentColor=e50914&autoplay=true&nextbutton=true';
     if (season && episode) return `https://vidphantom.com/tv/${tmdbId}/${season}/${episode}${params}`;
     return `https://vidphantom.com/tv/${tmdbId}${params}`;
+  }
+  if (provider === 'zenith') {
+    if (season && episode) return `https://movie-scraper-sooty.vercel.app/?id=${tmdbId}&s=${season}&e=${episode}`;
+    return `https://movie-scraper-sooty.vercel.app/?id=${tmdbId}`;
   }
   
   return `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=e50914`;
