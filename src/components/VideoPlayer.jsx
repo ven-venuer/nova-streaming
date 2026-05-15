@@ -28,8 +28,8 @@ export default function VideoPlayer() {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         
         // Attempt to generically capture season/episode change events from any provider
-        const s = data?.season || data?.data?.season || data?.detail?.season;
-        const e = data?.episode || data?.data?.episode || data?.detail?.episode;
+        const s = data?.season || data?.data?.season || data?.detail?.season || data?.data?.last_season_watched;
+        const e = data?.episode || data?.data?.episode || data?.detail?.episode || data?.data?.last_episode_watched;
 
         if (s && e && item.type === 'tv') {
           setPlayerSeason(Number(s));
