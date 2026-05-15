@@ -87,13 +87,23 @@ export async function discoverMedia(type, page = 1, genreId = '', sort = 'popula
   if (sort === 'title') sortBy = isTV ? 'name.asc' : 'original_title.asc';
 
   let url = `${endpoint}?language=en-US&page=${page}&sort_by=${sortBy}&include_adult=false`;
+  
+  // 284346=Hentai, 158359=Ecchi, 11094=Adult Animation, 10183=Erotic, 196838=Pornography
+  const bannedKeywords = '284346,158359,11094,10183,196838,208362';
+  url += `&without_keywords=${bannedKeywords}`;
+
   if (genreId) url += `&with_genres=${genreId}`;
   if (type === 'filipino') url += `&with_origin_country=PH`;
   if (type === 'kdrama') url += `&with_origin_country=KR`;
-  if (type === 'anime') url += `&with_origin_country=JP&with_genres=16`;
+  if (type === 'anime') url += `&with_origin_country=JP&with_genres=16&without_genres=10768`;
   
   const data = await get(url);
-  return data.results.map(item => normalize(item, isTV ? 'tv' : 'movie'));
+  return data.results
+    .filter(item => {
+      const title = (item.title || item.name || '').toLowerCase();
+      return !title.includes('overflow') && !title.includes('harem') && !title.includes('ecchi') && !title.includes("sweet agony");
+    })
+    .map(item => normalize(item, isTV ? 'tv' : 'movie'));
 }
 
 export async function fetchPopularMovies() {
@@ -148,8 +158,13 @@ export async function fetchKDrama() {
 }
 
 export async function fetchAnime() {
-  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=JP&with_genres=16&page=1&include_adult=false&without_genres=10768'); // Exclude War & Politics to sometimes filter out heavy adult/ecchi tagged incorrectly
-  return data.results.map(item => normalize(item, 'tv')).filter(item => !item.title.toLowerCase().includes('overflow') && !item.title.toLowerCase().includes('harem') && !item.title.toLowerCase().includes('ecchi'));
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=JP&with_genres=16&page=1&include_adult=false&without_genres=10768&without_keywords=284346,158359,11094,10183,196838,208362'); 
+  return data.results
+    .filter(item => {
+      const title = (item.title || item.name || '').toLowerCase();
+      return !title.includes('overflow') && !title.includes('harem') && !title.includes('ecchi') && !title.includes("sweet agony");
+    })
+    .map(item => normalize(item, 'tv'));
 }
 
 export async function fetchMovieDetails(id) {
