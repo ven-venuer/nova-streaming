@@ -215,6 +215,7 @@ export const PROVIDERS = [
   { id: 'vidking', name: 'VidKing', base: 'https://www.vidking.net/embed' },
   { id: 'vidphantom', name: 'VidPhantom', base: 'https://vidphantom.com' },
   { id: 'zenith', name: 'Zenith', base: 'https://movie-scraper-sooty.vercel.app' },
+  { id: 'nova_native', name: 'NOVA Native (HLS)', base: 'internal' },
 ];
 
 export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {

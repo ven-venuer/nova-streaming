@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, X, Loader2 } from 'lucide-react';
 import { AppContext } from '../App.jsx';
 import { getMovieEmbedUrl, getTVEmbedUrl, PROVIDERS } from '../tmdb.js';
+import HlsPlayer from './HlsPlayer.jsx';
 
 export default function VideoPlayer() {
   const { playerTitle: item, setPlayerTitle, playerSeason, playerEpisode, setPlayerSeason, setPlayerEpisode } = useContext(AppContext);
@@ -18,10 +19,10 @@ export default function VideoPlayer() {
     ? getTVEmbedUrl(item.tmdbId || item.id, playerSeason, playerEpisode, provider)
     : getMovieEmbedUrl(item.tmdbId || item.id, provider);
 
-  // Fetch m3u8 stream when FMovies is selected
+  // Fetch m3u8 stream when NOVA Native is selected
   useEffect(() => {
     const fetchStream = async () => {
-      if (!item?.tmdbId || provider !== 'fmovies') return;
+      if (!item?.tmdbId || provider !== 'nova_native') return;
       
       setLoadingStream(true);
       setStreamError(null);
@@ -50,49 +51,6 @@ export default function VideoPlayer() {
     
     fetchStream();
   }, [provider, item?.tmdbId, item?.type, item?.title]);
-
-  // Initialize HLS player
-  useEffect(() => {
-    if (!streamUrl || !videoRef.current || !useHls) return;
-    
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-    }
-
-    const loadHls = async () => {
-      const Hls = (await import('hls.js')).default;
-      
-      if (Hls.isSupported()) {
-        const hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: false,
-        });
-        
-        hls.loadSource(streamUrl);
-        hls.attachMedia(videoRef.current);
-        
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          videoRef.current.play().catch(console.log);
-        });
-        
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error('HLS error:', data);
-          setStreamError(data.type);
-        });
-        
-        hlsRef.current = hls;
-      }
-    };
-    
-    loadHls();
-    
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [streamUrl, useHls]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -163,7 +121,7 @@ export default function VideoPlayer() {
             }}
           >
             {PROVIDERS.map(p => (
-              <option key={p.id} value={p.id} style={{ background: '#111', color: p.id === 'fmovies' ? '#e50914' : 'white', fontWeight: p.id === 'fmovies' ? 600 : 400 }}>
+              <option key={p.id} value={p.id} style={{ background: '#111', color: p.id === 'nova_native' ? '#e50914' : 'white', fontWeight: p.id === 'nova_native' ? 600 : 400 }}>
                 {p.name}
               </option>
             ))}
@@ -177,15 +135,15 @@ export default function VideoPlayer() {
       </div>
 
       {/* Loading state for m3u8 */}
-      {loadingStream && provider === 'fmovies' && (
+      {loadingStream && provider === 'nova_native' && (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
           <Loader2 size={48} color="#e50914" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-          <div style={{ color: '#a0a0b8', fontSize: 14 }}>Loading FMovies stream...</div>
+          <div style={{ color: '#a0a0b8', fontSize: 14 }}>Extracting Raw Stream...</div>
         </div>
       )}
 
       {/* Error state for m3u8 */}
-      {streamError && provider === 'fmovies' && !loadingStream && (
+      {streamError && provider === 'nova_native' && !loadingStream && (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
           <div style={{ color: '#e50914', fontSize: 16 }}>Failed to load stream</div>
           <div style={{ color: '#a0a0b8', fontSize: 13 }}>{streamError}</div>
@@ -200,16 +158,13 @@ export default function VideoPlayer() {
 
       {/* HLS Video Player */}
       {useHls && streamUrl && !loadingStream && (
-        <video
-          ref={videoRef}
-          controls
-          style={{ width: '100%', height: '100%', backgroundColor: 'black' }}
-          crossOrigin="anonymous"
-        />
+        <div style={{ flex: 1, width: '100%', height: '100%' }}>
+          <HlsPlayer src={streamUrl} />
+        </div>
       )}
 
       {/* Fallback to iframe */}
-      {(!useHls || !streamUrl || provider !== 'fmovies') && !loadingStream && (
+      {(!useHls || !streamUrl || provider !== 'nova_native') && !loadingStream && (
         <iframe
           src={embedUrl}
           style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
