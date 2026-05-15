@@ -63,11 +63,35 @@ const GENRE_MAP = {
   10765:'Sci-Fi & Fantasy',10766:'Soap',10767:'Talk',10768:'War & Politics',
 };
 
+export const REVERSE_GENRE_MAP = Object.fromEntries(
+  Object.entries(GENRE_MAP).map(([id, name]) => [name, id])
+);
+
 // ── Fetch functions ──
 
 export async function fetchTrending() {
   const data = await get('/trending/all/week?language=en-US');
   return data.results.map(item => normalize(item));
+}
+
+export async function discoverMedia(type, page = 1, genreId = '', sort = 'popularity') {
+  const isTV = type === 'shows' || type === 'series' || type === 'filipino' || type === 'tv';
+  const endpoint = isTV ? '/discover/tv' : '/discover/movie';
+  
+  let sortBy = 'popularity.desc';
+  if (sort === 'score') sortBy = 'vote_average.desc&vote_count.gte=200';
+  else if (sort === 'year') sortBy = isTV ? 'first_air_date.desc' : 'primary_release_date.desc';
+  else if (sort === 'title') sortBy = 'original_title.asc'; // For TV it might be original_name, but TMDB handles it generally, or we stick to popularity. TMDB discover sort uses original_title.asc even for TV? Wait, for TV it's usually name.asc. 
+  
+  // Let's explicitly handle title sorting for TV
+  if (sort === 'title') sortBy = isTV ? 'name.asc' : 'original_title.asc';
+
+  let url = `${endpoint}?language=en-US&page=${page}&sort_by=${sortBy}`;
+  if (genreId) url += `&with_genres=${genreId}`;
+  if (type === 'filipino') url += `&with_origin_country=PH`;
+  
+  const data = await get(url);
+  return data.results.map(item => normalize(item, isTV ? 'tv' : 'movie'));
 }
 
 export async function fetchPopularMovies() {

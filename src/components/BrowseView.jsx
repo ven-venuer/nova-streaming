@@ -1,29 +1,79 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { AppContext } from '../App.jsx';
 import { TitleCard } from './ContentRow.jsx';
+import { discoverMedia, REVERSE_GENRE_MAP } from '../tmdb.js';
 
 export default function BrowseView({ type }) {
-  const { allTitles, catalog } = useContext(AppContext);
   const [genre, setGenre] = useState('All');
-  const [sort, setSort] = useState('score');
+  const [sort, setSort] = useState('popularity');
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  const filtered = useMemo(() => {
-    let items = allTitles;
-    if (type === 'movies') items = items.filter(t => t.type === 'movie');
-    else if (type === 'shows' || type === 'series') items = items.filter(t => t.type === 'tv');
-    else if (type === 'filipino') items = items.filter(t => (catalog?.filipinoMedia || []).find(f => f.id === t.id));
+  const observerTarget = useRef(null);
+
+  // Initial load & when filters change
+  useEffect(() => {
+    setItems([]);
+    setPage(1);
+    setHasMore(true);
+    fetchData(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, genre, sort]);
+
+  const fetchData = async (pageNum, reset = false) => {
+    setLoading(true);
+    try {
+      const genreId = genre === 'All' ? '' : REVERSE_GENRE_MAP[genre] || '';
+      const newItems = await discoverMedia(type, pageNum, genreId, sort);
+      
+      if (newItems.length === 0) {
+        setHasMore(false);
+      } else {
+        setItems(prev => {
+          // Prevent duplicates that sometimes happen with TMDB pagination
+          const combined = reset ? newItems : [...prev, ...newItems];
+          const unique = [];
+          const seen = new Set();
+          for (const item of combined) {
+            if (!seen.has(item.id)) {
+              seen.add(item.id);
+              unique.push(item);
+            }
+          }
+          return unique;
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchData(nextPage);
+        }
+      },
+      { rootMargin: '400px' } // Trigger fetch slightly before reaching the very bottom
+    );
     
-    if (genre !== 'All') items = items.filter(t => (t.genreNames || t.genre || []).includes(genre));
-    if (sort === 'score') items = [...items].sort((a, b) => b.score - a.score);
-    else if (sort === 'year') items = [...items].sort((a, b) => (b.year || 0) - (a.year || 0));
-    else if (sort === 'title') items = [...items].sort((a, b) => a.title.localeCompare(b.title));
-    return items;
-  }, [allTitles, type, genre, sort, catalog]);
+    if (observerTarget.current) observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [page, hasMore, loading, type, genre, sort]);
 
-  const heroItem = filtered[0];
-  const allGenres = ['All', ...new Set(filtered.flatMap(t => t.genreNames || t.genre || []))];
+  const heroItem = items[0];
   const label = type === 'movies' ? 'Movies' : type === 'shows' ? 'TV Shows' : type === 'series' ? 'Series' : 'Filipino Media';
+  
+  // Get all unique TMDB genres
+  const allGenres = ['All', ...Object.keys(REVERSE_GENRE_MAP).sort()];
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
@@ -33,7 +83,7 @@ export default function BrowseView({ type }) {
           <div className="hero-overlay" />
           <div style={{ position: 'relative', zIndex: 10 }}>
             <h1 className="hero-title" style={{ fontSize: 'clamp(40px, 6vw, 72px)' }}>{label}</h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 16, marginTop: 8 }}>Browse {filtered.length} titles</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 16, marginTop: 8 }}>Explore limitless titles</p>
           </div>
         </div>
       )}
@@ -42,9 +92,9 @@ export default function BrowseView({ type }) {
           {allGenres.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
         <select className="filter-select" value={sort} onChange={e => setSort(e.target.value)}>
+          <option value="popularity">Most Popular</option>
           <option value="score">Top Rated</option>
           <option value="year">Newest</option>
-          <option value="title">A–Z</option>
         </select>
         {genre !== 'All' && (
           <motion.div className="filter-pill" initial={{ scale: 0 }} animate={{ scale: 1 }} onClick={() => setGenre('All')}>
@@ -54,11 +104,21 @@ export default function BrowseView({ type }) {
       </div>
       <div style={{ padding: '24px 0' }}>
         <div className="browse-grid">
-          {filtered.map((item, i) => (
-            <div key={item.id} className="card-animate" style={{ animationDelay: `${Math.min(i * 20, 400)}ms` }}>
+          {items.map((item, i) => (
+            <div key={item.id} className="card-animate" style={{ animationDelay: `${Math.min((i % 20) * 20, 400)}ms` }}>
               <TitleCard item={item} />
             </div>
           ))}
+        </div>
+        
+        {/* Infinite Scroll Anchor */}
+        <div ref={observerTarget} style={{ height: 40, width: '100%', marginTop: 20, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {loading && (
+            <div style={{ width: 24, height: 24, border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          )}
+          {!hasMore && items.length > 0 && (
+            <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>You've reached the end!</div>
+          )}
         </div>
       </div>
     </motion.div>
