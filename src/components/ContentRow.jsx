@@ -37,7 +37,7 @@ const TitleCard = memo(function TitleCard({ item, landscape }) {
   );
 });
 
-const ContentRow = memo(function ContentRow({ title, items, icon, landscape, category }) {
+const ContentRow = memo(function ContentRow({ title, items, icon, landscape, category, targetView }) {
   const { setCurrentView } = useContext(AppContext);
   const ref = useRef(null);
   const scroll = useCallback((dir) => {
@@ -47,7 +47,8 @@ const ContentRow = memo(function ContentRow({ title, items, icon, landscape, cat
   if (!items || items.length === 0) return null;
 
   const handleSeeAll = () => {
-    if (category === 'tv') setCurrentView('shows');
+    if (targetView) setCurrentView(targetView);
+    else if (category === 'tv') setCurrentView('shows');
     else setCurrentView('movies');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

@@ -26,7 +26,7 @@ import AccountView from './components/AccountView.jsx';
 import SettingsView from './components/SettingsView.jsx';
 import DetailModal from './components/DetailModal.jsx';
 import VideoPlayer from './components/VideoPlayer.jsx';
-import { fetchTrending, fetchPopularMovies, fetchTopRatedMovies, fetchUpcomingMovies, fetchNowPlayingMovies, fetchPopularTV, fetchTopRatedTV, fetchAiringTodayTV, fetchGenreMovies, fetchMovieDetails, fetchTVDetails, fetchFilipinoMedia } from './tmdb.js';
+import { fetchTrending, fetchPopularMovies, fetchTopRatedMovies, fetchUpcomingMovies, fetchNowPlayingMovies, fetchPopularTV, fetchTopRatedTV, fetchAiringTodayTV, fetchGenreMovies, fetchMovieDetails, fetchTVDetails, fetchFilipinoMedia, fetchKDrama, fetchAnime } from './tmdb.js';
 
 export const AppContext = React.createContext();
 
@@ -83,7 +83,7 @@ export default function App() {
   const [catalog, setCatalog] = useState({
     trending: [], popularMovies: [], topRatedMovies: [], upcoming: [], nowPlaying: [],
     popularTV: [], topRatedTV: [], airingToday: [],
-    actionMovies: [], comedyMovies: [], horrorMovies: [], sciFiMovies: [], filipinoMedia: [],
+    actionMovies: [], comedyMovies: [], horrorMovies: [], sciFiMovies: [], filipinoMedia: [], kdrama: [], anime: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -270,14 +270,14 @@ export default function App() {
   useEffect(() => {
     async function load() {
       try {
-        const [trending, popularMovies, topRatedMovies, upcoming, nowPlaying, popularTV, topRatedTV, airingToday, actionMovies, comedyMovies, horrorMovies, sciFiMovies, filipinoMedia] = await Promise.all([
+        const [trending, popularMovies, topRatedMovies, upcoming, nowPlaying, popularTV, topRatedTV, airingToday, actionMovies, comedyMovies, horrorMovies, sciFiMovies, filipinoMedia, kdrama, anime] = await Promise.all([
           fetchTrending(), fetchPopularMovies(), fetchTopRatedMovies(), fetchUpcomingMovies(),
           fetchNowPlayingMovies(), fetchPopularTV(), fetchTopRatedTV(), fetchAiringTodayTV(),
           fetchGenreMovies(28), fetchGenreMovies(35), fetchGenreMovies(27), fetchGenreMovies(878),
-          fetchFilipinoMedia(),
+          fetchFilipinoMedia(), fetchKDrama(), fetchAnime(),
         ]);
         trending.slice(0, 5).forEach(t => t.featured = true);
-        setCatalog({ trending, popularMovies, topRatedMovies, upcoming, nowPlaying, popularTV, topRatedTV, airingToday, actionMovies, comedyMovies, horrorMovies, sciFiMovies, filipinoMedia });
+        setCatalog({ trending, popularMovies, topRatedMovies, upcoming, nowPlaying, popularTV, topRatedTV, airingToday, actionMovies, comedyMovies, horrorMovies, sciFiMovies, filipinoMedia, kdrama, anime });
       } catch (err) {
         console.error('Failed to load catalog:', err);
       } finally {
@@ -307,7 +307,7 @@ export default function App() {
       if (params.get('play')) return; // Don't wipe URL if we are deep linking
       
       const path = window.location.pathname.substring(1);
-      const validViews = ['home', 'movies', 'shows', 'series', 'filipino', 'mylist', 'account', 'settings', 'login', 'register'];
+      const validViews = ['home', 'movies', 'shows', 'series', 'filipino', 'kdrama', 'anime', 'mylist', 'account', 'settings', 'login', 'register'];
       if (validViews.includes(path)) {
         setCurrentView(path);
       } else if (path === '') {
@@ -328,7 +328,7 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.substring(1);
-      const validViews = ['home', 'movies', 'shows', 'series', 'filipino', 'mylist', 'account', 'settings', 'login', 'register'];
+      const validViews = ['home', 'movies', 'shows', 'series', 'filipino', 'kdrama', 'anime', 'mylist', 'account', 'settings', 'login', 'register'];
       if (validViews.includes(path)) {
         setCurrentView(path);
       } else if (path === '') {
@@ -410,6 +410,8 @@ export default function App() {
           {currentView === 'shows' && <BrowseView key="shows" type="shows" />}
           {currentView === 'series' && <BrowseView key="series" type="series" />}
           {currentView === 'filipino' && <BrowseView key="filipino" type="filipino" />}
+          {currentView === 'kdrama' && <BrowseView key="kdrama" type="kdrama" />}
+          {currentView === 'anime' && <BrowseView key="anime" type="anime" />}
           {currentView === 'mylist' && <MyListView key="mylist" />}
           {currentView === 'account' && <AccountView key="account" />}
           {currentView === 'settings' && <SettingsView key="settings" />}

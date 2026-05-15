@@ -75,7 +75,7 @@ export async function fetchTrending() {
 }
 
 export async function discoverMedia(type, page = 1, genreId = '', sort = 'popularity') {
-  const isTV = type === 'shows' || type === 'series' || type === 'filipino' || type === 'tv';
+  const isTV = type === 'shows' || type === 'series' || type === 'filipino' || type === 'kdrama' || type === 'anime' || type === 'tv';
   const endpoint = isTV ? '/discover/tv' : '/discover/movie';
   
   let sortBy = 'popularity.desc';
@@ -89,6 +89,8 @@ export async function discoverMedia(type, page = 1, genreId = '', sort = 'popula
   let url = `${endpoint}?language=en-US&page=${page}&sort_by=${sortBy}`;
   if (genreId) url += `&with_genres=${genreId}`;
   if (type === 'filipino') url += `&with_origin_country=PH`;
+  if (type === 'kdrama') url += `&with_origin_country=KR`;
+  if (type === 'anime') url += `&with_origin_country=JP&with_genres=16`;
   
   const data = await get(url);
   return data.results.map(item => normalize(item, isTV ? 'tv' : 'movie'));
@@ -137,6 +139,16 @@ export async function fetchGenreMovies(genreId) {
 export async function fetchFilipinoMedia() {
   // Fetch popular TV shows/movies from the Philippines
   const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=PH&page=1');
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
+export async function fetchKDrama() {
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=KR&page=1');
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
+export async function fetchAnime() {
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=JP&with_genres=16&page=1');
   return data.results.map(item => normalize(item, 'tv'));
 }
 

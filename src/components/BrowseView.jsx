@@ -70,7 +70,7 @@ export default function BrowseView({ type }) {
   }, [page, hasMore, loading, type, genre, sort]);
 
   const heroItem = items[0];
-  const label = type === 'movies' ? 'Movies' : type === 'shows' ? 'TV Shows' : type === 'series' ? 'Series' : 'Filipino Media';
+  const label = type === 'movies' ? 'Movies' : type === 'shows' ? 'TV Shows' : type === 'series' ? 'Series' : type === 'filipino' ? 'Filipino Media' : type === 'kdrama' ? 'K-Dramas' : type === 'anime' ? 'Anime' : 'Media';
   
   // Get all unique TMDB genres
   const allGenres = ['All', ...Object.keys(REVERSE_GENRE_MAP).sort()];
