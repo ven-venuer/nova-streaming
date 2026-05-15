@@ -399,23 +399,30 @@ export default function App() {
     );
   }
 
+  const renderView = () => {
+    switch (currentView) {
+      case 'home': return <HomeView key="home" />;
+      case 'movies': return <BrowseView key="movies" type="movies" />;
+      case 'shows': return <BrowseView key="shows" type="shows" />;
+      case 'series': return <BrowseView key="series" type="series" />;
+      case 'filipino': return <BrowseView key="filipino" type="filipino" />;
+      case 'kdrama': return <BrowseView key="kdrama" type="kdrama" />;
+      case 'anime': return <BrowseView key="anime" type="anime" />;
+      case 'mylist': return <MyListView key="mylist" />;
+      case 'account': return <AccountView key="account" />;
+      case 'settings': return <SettingsView key="settings" />;
+      case 'login': return <AuthView key="login" onLogin={handleLogin} />;
+      default: return <HomeView key="home" />;
+    }
+  };
+
   return (
     <AppContext.Provider value={ctx}>
       <Navbar />
       <MobileNav />
       <div className="main-content">
         <AnimatePresence mode="wait">
-          {currentView === 'home' && <HomeView key="home" />}
-          {currentView === 'movies' && <BrowseView key="movies" type="movies" />}
-          {currentView === 'shows' && <BrowseView key="shows" type="shows" />}
-          {currentView === 'series' && <BrowseView key="series" type="series" />}
-          {currentView === 'filipino' && <BrowseView key="filipino" type="filipino" />}
-          {currentView === 'kdrama' && <BrowseView key="kdrama" type="kdrama" />}
-          {currentView === 'anime' && <BrowseView key="anime" type="anime" />}
-          {currentView === 'mylist' && <MyListView key="mylist" />}
-          {currentView === 'account' && <AccountView key="account" />}
-          {currentView === 'settings' && <SettingsView key="settings" />}
-          {currentView === 'login' && <AuthView key="login" onLogin={handleLogin} />}
+          {renderView()}
         </AnimatePresence>
       </div>
       {selectedTitle && <DetailModal />}
