@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Info, TrendingUp, Film, Tv, Star, PlayCircle, Trophy, Zap, Rocket, Laugh, Skull, CalendarDays, Radio } from 'lucide-react';
+import { Play, Info, TrendingUp, Film, Tv, Star, PlayCircle, Trophy, Zap, Rocket, Laugh, Skull, CalendarDays, Radio, Globe } from 'lucide-react';
 import { AppContext } from '../App.jsx';
 import ContentRow from './ContentRow.jsx';
 
@@ -97,6 +97,7 @@ export default function HomeView() {
         <ContentRow title="Popular TV Shows" items={catalog.popularTV} icon={<RowIcon Icon={Tv} />} category="tv" />
         <ContentRow title="Top Rated Movies" items={catalog.topRatedMovies} icon={<RowIcon Icon={Star} color="var(--accent-gold)" />} category="movie" />
         <ContentRow title="Now Playing" items={catalog.nowPlaying} icon={<RowIcon Icon={PlayCircle} />} category="movie" />
+        <ContentRow title="Filipino Media" items={catalog.filipinoMedia} icon={<RowIcon Icon={Globe} color="#f5c518" />} category="tv" />
         <ContentRow title="Top Rated TV" items={catalog.topRatedTV} icon={<RowIcon Icon={Trophy} color="var(--accent-gold)" />} category="tv" />
         <ContentRow title="Action Movies" items={catalog.actionMovies} icon={<RowIcon Icon={Zap} color="#ff6b35" />} category="movie" />
         <ContentRow title="Sci-Fi" items={catalog.sciFiMovies} icon={<RowIcon Icon={Rocket} color="#4facfe" />} category="movie" />

@@ -110,6 +110,12 @@ export async function fetchGenreMovies(genreId) {
   return data.results.map(item => normalize(item, 'movie'));
 }
 
+export async function fetchFilipinoMedia() {
+  // Fetch popular TV shows/movies from the Philippines
+  const data = await get('/discover/tv?language=en-US&sort_by=popularity.desc&with_origin_country=PH&page=1');
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
 export async function fetchMovieDetails(id) {
   const data = await get(`/movie/${id}?language=en-US&append_to_response=credits`);
   const norm = normalize(data, 'movie');
