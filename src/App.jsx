@@ -305,6 +305,14 @@ export default function App() {
       isInitialMount.current = false;
       const params = new URLSearchParams(window.location.search);
       if (params.get('play')) return; // Don't wipe URL if we are deep linking
+      
+      const path = window.location.pathname.substring(1);
+      const validViews = ['home', 'movies', 'shows', 'series', 'filipino', 'mylist', 'account', 'settings', 'login', 'register'];
+      if (validViews.includes(path)) {
+        setCurrentView(path);
+      } else if (path === '') {
+        setCurrentView('home');
+      }
     }
 
     if (playerTitle) {
@@ -312,9 +320,24 @@ export default function App() {
       const url = `/?play=${playerTitle.type}&id=${id}&s=${playerSeason}&e=${playerEpisode}`;
       window.history.pushState({ player: true }, '', url);
     } else {
-      window.history.pushState({}, '', '/');
+      const url = currentView === 'home' ? '/' : `/${currentView}`;
+      window.history.pushState({}, '', url);
     }
-  }, [playerTitle, playerSeason, playerEpisode]);
+  }, [playerTitle, playerSeason, playerEpisode, currentView]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.substring(1);
+      const validViews = ['home', 'movies', 'shows', 'series', 'filipino', 'mylist', 'account', 'settings', 'login', 'register'];
+      if (validViews.includes(path)) {
+        setCurrentView(path);
+      } else if (path === '') {
+        setCurrentView('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Deep linking on mount
   useEffect(() => {
@@ -386,6 +409,7 @@ export default function App() {
           {currentView === 'movies' && <BrowseView key="movies" type="movies" />}
           {currentView === 'shows' && <BrowseView key="shows" type="shows" />}
           {currentView === 'series' && <BrowseView key="series" type="series" />}
+          {currentView === 'filipino' && <BrowseView key="filipino" type="filipino" />}
           {currentView === 'mylist' && <MyListView key="mylist" />}
           {currentView === 'account' && <AccountView key="account" />}
           {currentView === 'settings' && <SettingsView key="settings" />}

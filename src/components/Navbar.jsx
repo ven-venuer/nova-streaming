@@ -41,6 +41,7 @@ export default function Navbar() {
     { key: 'movies', label: 'Movies' },
     { key: 'shows', label: 'TV Shows' },
     { key: 'series', label: 'Series' },
+    { key: 'filipino', label: 'Filipino' },
     { key: 'mylist', label: 'My List' },
   ];
 

@@ -4,7 +4,7 @@ import { AppContext } from '../App.jsx';
 import { TitleCard } from './ContentRow.jsx';
 
 export default function BrowseView({ type }) {
-  const { allTitles } = useContext(AppContext);
+  const { allTitles, catalog } = useContext(AppContext);
   const [genre, setGenre] = useState('All');
   const [sort, setSort] = useState('score');
 
@@ -12,16 +12,18 @@ export default function BrowseView({ type }) {
     let items = allTitles;
     if (type === 'movies') items = items.filter(t => t.type === 'movie');
     else if (type === 'shows' || type === 'series') items = items.filter(t => t.type === 'tv');
+    else if (type === 'filipino') items = items.filter(t => (catalog?.filipinoMedia || []).find(f => f.id === t.id));
+    
     if (genre !== 'All') items = items.filter(t => (t.genreNames || t.genre || []).includes(genre));
     if (sort === 'score') items = [...items].sort((a, b) => b.score - a.score);
     else if (sort === 'year') items = [...items].sort((a, b) => (b.year || 0) - (a.year || 0));
     else if (sort === 'title') items = [...items].sort((a, b) => a.title.localeCompare(b.title));
     return items;
-  }, [allTitles, type, genre, sort]);
+  }, [allTitles, type, genre, sort, catalog]);
 
   const heroItem = filtered[0];
-  const allGenres = ['All', ...new Set(allTitles.flatMap(t => t.genreNames || t.genre || []))];
-  const label = type === 'movies' ? 'Movies' : type === 'shows' ? 'TV Shows' : 'Series';
+  const allGenres = ['All', ...new Set(filtered.flatMap(t => t.genreNames || t.genre || []))];
+  const label = type === 'movies' ? 'Movies' : type === 'shows' ? 'TV Shows' : type === 'series' ? 'Series' : 'Filipino Media';
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
