@@ -1,16 +1,97 @@
-import React, { useContext, useEffect, useRef } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { ArrowLeft, X, Loader2 } from 'lucide-react';
 import { AppContext } from '../App.jsx';
 import { getMovieEmbedUrl, getTVEmbedUrl, PROVIDERS } from '../tmdb.js';
 
 export default function VideoPlayer() {
   const { playerTitle: item, setPlayerTitle, playerSeason, playerEpisode, setPlayerSeason, setPlayerEpisode } = useContext(AppContext);
   const containerRef = useRef(null);
-  const [provider, setProvider] = React.useState('videasy');
+  const videoRef = useRef(null);
+  const hlsRef = useRef(null);
+  const [provider, setProvider] = useState('videasy');
+  const [streamUrl, setStreamUrl] = useState(null);
+  const [loadingStream, setLoadingStream] = useState(false);
+  const [streamError, setStreamError] = useState(null);
+  const [useHls, setUseHls] = useState(false);
 
   const embedUrl = item.type === 'tv'
     ? getTVEmbedUrl(item.tmdbId || item.id, playerSeason, playerEpisode, provider)
     : getMovieEmbedUrl(item.tmdbId || item.id, provider);
+
+  // Fetch m3u8 stream when FMovies is selected
+  useEffect(() => {
+    const fetchStream = async () => {
+      if (!item?.tmdbId || provider !== 'fmovies') return;
+      
+      setLoadingStream(true);
+      setStreamError(null);
+      setUseHls(false);
+      setStreamUrl(null);
+      
+      try {
+        const tmdbId = item.tmdbId || item.id;
+        const response = await fetch(`/api/stream-source?tmdbId=${tmdbId}&type=${item.type}`);
+        const data = await response.json();
+        
+        if (data.success && data.url) {
+          setStreamUrl(data.url);
+          setUseHls(true);
+        } else {
+          setStreamError(data.error || 'Failed to get stream');
+        }
+      } catch (err) {
+        console.log('Stream API error:', err);
+        setStreamError(err.message);
+      } finally {
+        setLoadingStream(false);
+      }
+    };
+    
+    fetchStream();
+  }, [provider, item?.tmdbId, item?.type]);
+
+  // Initialize HLS player
+  useEffect(() => {
+    if (!streamUrl || !videoRef.current || !useHls) return;
+    
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+    }
+
+    const loadHls = async () => {
+      const Hls = (await import('hls.js')).default;
+      
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+        });
+        
+        hls.loadSource(streamUrl);
+        hls.attachMedia(videoRef.current);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoRef.current.play().catch(console.log);
+        });
+        
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          console.error('HLS error:', data);
+          setStreamError(data.type);
+        });
+        
+        hlsRef.current = hls;
+      }
+    };
+    
+    loadHls();
+    
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [streamUrl, useHls]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -73,7 +154,7 @@ export default function VideoPlayer() {
         }}>
           <select
             value={provider}
-            onChange={e => setProvider(e.target.value)}
+            onChange={e => { setProvider(e.target.value); setUseHls(false); }}
             style={{
               background: 'transparent', border: 'none', color: 'white',
               fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500, outline: 'none',
@@ -85,6 +166,9 @@ export default function VideoPlayer() {
                 {p.name}
               </option>
             ))}
+            <option value="fmovies" style={{ background: '#111', color: '#e50914', fontWeight: 600 }}>
+              FMovies (m3u8)
+            </option>
           </select>
           <div style={{ pointerEvents: 'none', marginLeft: -8, marginTop: 2, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: '4px solid white' }} />
         </div>
@@ -94,16 +178,51 @@ export default function VideoPlayer() {
         </div>
       </div>
 
-      <iframe
-        src={embedUrl}
-        style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
-        allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-        allowFullScreen
-        webkitallowfullscreen="true"
-        mozallowfullscreen="true"
-        frameBorder="0"
-        title={item.title}
-      />
+      {/* Loading state for m3u8 */}
+      {loadingStream && provider === 'fmovies' && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <Loader2 size={48} color="#e50914" className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+          <div style={{ color: '#a0a0b8', fontSize: 14 }}>Loading FMovies stream...</div>
+        </div>
+      )}
+
+      {/* Error state for m3u8 */}
+      {streamError && provider === 'fmovies' && !loadingStream && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <div style={{ color: '#e50914', fontSize: 16 }}>Failed to load stream</div>
+          <div style={{ color: '#a0a0b8', fontSize: 13 }}>{streamError}</div>
+          <button 
+            onClick={() => setProvider('videasy')}
+            style={{ padding: '8px 16px', background: '#e50914', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          >
+            Switch to VidEasy
+          </button>
+        </div>
+      )}
+
+      {/* HLS Video Player */}
+      {useHls && streamUrl && !loadingStream && (
+        <video
+          ref={videoRef}
+          controls
+          style={{ width: '100%', height: '100%', backgroundColor: 'black' }}
+          crossOrigin="anonymous"
+        />
+      )}
+
+      {/* Fallback to iframe */}
+      {(!useHls || !streamUrl || provider !== 'fmovies') && !loadingStream && (
+        <iframe
+          src={embedUrl}
+          style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
+          allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
+          allowFullScreen
+          webkitallowfullscreen="true"
+          mozallowfullscreen="true"
+          frameBorder="0"
+          title={item.title}
+        />
+      )}
 
     </div>
   );
