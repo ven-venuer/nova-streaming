@@ -1,0 +1,232 @@
+VIDSRC
+API Documentation
+Detailed representation of the API endpoints for Vidsrc includes comprehensive information regarding the available methods, request formats, required parameters and optional parameters.
+Endpoint
+embed/movie/{id}
+Valid parameters:
+- {id} required - from imdb.com or themoviedb.com , imdb id must have tt prefix.
+
+Examples
+https://vidsrc.to/embed/movie/tt17048514
+
+https://vidsrc.to/embed/movie/927085
+
+Endpoint
+embed/tv/%7bid%7d.html
+Valid parameters:
+- {id} required - from imdb.com or themoviedb.com , imdb id must have tt prefix.
+
+Examples
+https://vidsrc.to/embed/tv/tt18382028
+
+https://vidsrc.to/embed/tv/158876
+
+Endpoint
+embed/tv/{id}/{season}
+Valid parameters:
+- {id} required - from imdb.com or themoviedb.com , imdb id must have tt prefix.
+
+- {season} required - the season number
+
+Examples
+https://vidsrc.to/embed/tv/tt18382028/1
+
+https://vidsrc.to/embed/tv/158876/1
+
+Endpoint
+embed/tv/{id}/{season}/{episode}
+Valid parameters:
+- {id} required - from imdb.com or themoviedb.com , imdb id must have tt prefix.
+
+- {season} required - the eason number
+
+- {episode} required - the episode number
+
+Examples
+https://vidsrc.to/embed/tv/tt18382028/1/5
+
+https://vidsrc.to/embed/tv/158876/1/5
+
+Endpoint
+vapi/movie/{type}/{page}
+Valid parameters:
+- {type} required - "new" for new release or "add" for recently added.
+
+- {page} optional
+
+Examples
+https://vidsrc.to/vapi/movie/new
+
+https://vidsrc.to/vapi/movie/new/15
+
+https://vidsrc.to/vapi/movie/add
+
+https://vidsrc.to/vapi/movie/add/15
+
+Endpoint
+vapi/tv/{type}/{page}
+Valid parameters:
+- {type} required - "new" for new release or "add" for recently added.
+
+- {page} optional
+
+Examples
+https://vidsrc.to/vapi/tv/new
+
+https://vidsrc.to/vapi/tv/new/15
+
+https://vidsrc.to/vapi/tv/add
+
+https://vidsrc.to/vapi/tv/add/15
+
+Endpoint
+vapi/episode/latest/{page}
+Valid parameters:
+- {page} optional
+
+Examples
+https://vidsrc.to/vapi/episode/latest
+
+https://vidsrc.to/vapi/episode/latest/15
+
+You can load your own subtitles by two methods:
+
+Single file:
+https://vidsrc.to/embed/movie/
+
+- {sub_file} required - Url to .vtt sub
+
+- {sub_label} optional
+
+Multiple file:
+https://vidsrc.to/embed/movie/{id}?sub.info={sub_json}
+
+- {sub_json} required - A json file with this format:
+
+                            [ { file: "https://domain.com/file1.vtt", label: "English", kind: "captions"
+                            }, { file: "https://domain.com/file2.vtt", label: "Japanese", kind: "captions"
+                            } ]
+                          
+* {sub_file} or {sub_json} must have Access-Control-Allow-Origin: * header
+
+
+
+
+
+
+
+
+
+VIDKING:
+API Routes
+Movies
+/embed/movie/{tmdbId}
+Replace {tmdbId} with the TMDB movie ID
+
+TV Series
+/embed/tv/{tmdbId}/{season}/{episode}
+Specify the show ID, season number, and episode number
+
+URL Parameters
+Parameter	Type	Description	Example
+color	string	Primary color (hex without #)	?color=ff0000
+autoPlay	boolean	Enable auto-play feature	?autoPlay=true
+nextEpisode	boolean	Show next episode button (TV only)	?nextEpisode=true
+episodeSelector	boolean	Enable episode selection menu (TV only)	?episodeSelector=true
+progress	number	Start time in seconds	?progress=120
+Watch Progress Tracking
+The player can send watch progress events to the parent window. You can save this progress to localStorage or your own backend. Here's a complete example:
+
+Progress Tracking Script
+// Add this script to your website
+window.addEventListener("message", function (event) {
+  // console.log("event: ", event);
+  console.log("Message received from the player: ", JSON.parse(event.data)); // Message received from player
+  if (typeof event.data === "string") {
+    var messageArea = document.querySelector("#messageArea");
+    messageArea.innerText = event.data;
+  }
+});
+The player sends progress updates containing:
+id: Content ID
+type: Content type (movie/tv)
+progress: Watch progress percentage
+timestamp: Current playback position in seconds
+duration: Total duration in seconds
+season: Season number (for TV shows)
+episode: Episode number (for TV shows)
+Events Sent
+timeupdate - Continuous progress during playback
+play - When video starts
+pause - When video pauses
+ended - When video ends
+seeked - When user seeks to different time
+Event Data Structure
+{
+  "type": "PLAYER_EVENT",
+  "data": {
+    "event": "timeupdate|play|pause|ended|seeked",
+    "currentTime": 120.5,
+    "duration": 7200,
+    "progress": 1.6,
+    "id": "299534",
+    "mediaType": "movie",
+    "season": 1,
+    "episode": 8,
+    "timestamp": 1640995200000
+  }
+}
+Code Examples
+Basic Movie Player
+Simple movie player without extra features
+
+Preview
+<iframe 
+  src="https://www.vidking.net/embed/movie/1078605" 
+  width="100%" 
+  height="600" 
+  frameborder="0" 
+  allowfullscreen>
+</iframe>
+TV Series with All Features
+TV player with custom color and all features enabled
+
+Preview
+<iframe 
+  src="https://www.vidking.net/embed/tv/119051/1/8?color=e50914&autoPlay=true&nextEpisode=true&episodeSelector=true" 
+  width="100%" 
+  height="600" 
+  frameborder="0" 
+  allowfullscreen>
+</iframe>
+Custom Branded Player
+Player with custom brand colors and autoplay
+
+Preview
+<iframe 
+  src="https://www.vidking.net/embed/movie/1078605?color=9146ff&autoPlay=true" 
+  width="100%" 
+  height="600" 
+  frameborder="0" 
+  allowfullscreen>
+</iframe>
+Player with Start Time
+Start video at 2 minutes (120 seconds) with custom color
+
+Preview
+<iframe 
+  src="https://www.vidking.net/embed/movie/1078605?color=e50914&progress=120&autoPlay=true" 
+  width="100%" 
+  height="600" 
+  frameborder="0" 
+  allowfullscreen>
+</iframe>
+
+
+
+
+
+
+
+
+

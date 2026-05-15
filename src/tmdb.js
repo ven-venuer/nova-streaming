@@ -211,20 +211,14 @@ export async function searchMulti(query, includeAdult = false) {
 // ── Embed URLs ──
 export const PROVIDERS = [
   { id: 'videasy', name: 'VidEasy (Default)', base: 'https://player.videasy.net' },
-  { id: 'vidsrc', name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
-  { id: 'vidsrcnet', name: 'VidSrc.net', base: 'https://vidsrc.net/embed' },
-  { id: 'vidsrcpro', name: 'VidSrc.pro', base: 'https://vidsrc.pro/embed' },
+  { id: 'vidsrc', name: 'VidSrc', base: 'https://vidsrc.me/embed' },
   { id: 'vidking', name: 'VidKing', base: 'https://embed.su/embed' },
-  { id: 'vsembed', name: 'VSEmbed', base: 'https://vsembed.su/embed' },
 ];
 
 export function getMovieEmbedUrl(tmdbId, provider = 'videasy') {
   if (provider === 'videasy') return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
   if (provider === 'vidsrc') return `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`;
-  if (provider === 'vidsrcnet') return `https://vidsrc.net/embed/movie?tmdb=${tmdbId}`;
-  if (provider === 'vidsrcpro') return `https://vidsrc.pro/embed/movie/${tmdbId}`;
   if (provider === 'vidking') return `https://embed.su/embed/movie/${tmdbId}`;
-  if (provider === 'vsembed') return `https://vsembed.su/embed/movie/${tmdbId}`;
   return `https://player.videasy.net/movie/${tmdbId}?color=e50914&overlay=true`;
 }
 
@@ -235,10 +229,7 @@ export function getTVEmbedUrl(tmdbId, season, episode, provider = 'videasy') {
     return `https://player.videasy.net/tv/${tmdbId}?${baseParams}`;
   }
   if (provider === 'vidsrc') return `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
-  if (provider === 'vidsrcnet') return `https://vidsrc.net/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}`;
-  if (provider === 'vidsrcpro') return `https://vidsrc.pro/embed/tv/${tmdbId}/${season}/${episode}`;
   if (provider === 'vidking') return `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}`;
-  if (provider === 'vsembed') return `https://vsembed.su/embed/tv/${tmdbId}/${season}/${episode}`;
   
   return `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}?color=e50914`;
 }
