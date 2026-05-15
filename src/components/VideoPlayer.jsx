@@ -30,7 +30,8 @@ export default function VideoPlayer() {
       
       try {
         const tmdbId = item.tmdbId || item.id;
-        const response = await fetch(`/api/stream-source?tmdbId=${tmdbId}&type=${item.type}`);
+        const title = item.title || '';
+        const response = await fetch(`/api/stream-source?tmdbId=${tmdbId}&type=${item.type}&title=${encodeURIComponent(title)}`);
         const data = await response.json();
         
         if (data.success && data.url) {
@@ -48,7 +49,7 @@ export default function VideoPlayer() {
     };
     
     fetchStream();
-  }, [provider, item?.tmdbId, item?.type]);
+  }, [provider, item?.tmdbId, item?.type, item?.title]);
 
   // Initialize HLS player
   useEffect(() => {
@@ -162,13 +163,10 @@ export default function VideoPlayer() {
             }}
           >
             {PROVIDERS.map(p => (
-              <option key={p.id} value={p.id} style={{ background: '#111', color: 'white' }}>
+              <option key={p.id} value={p.id} style={{ background: '#111', color: p.id === 'fmovies' ? '#e50914' : 'white', fontWeight: p.id === 'fmovies' ? 600 : 400 }}>
                 {p.name}
               </option>
             ))}
-            <option value="fmovies" style={{ background: '#111', color: '#e50914', fontWeight: 600 }}>
-              FMovies (m3u8)
-            </option>
           </select>
           <div style={{ pointerEvents: 'none', marginLeft: -8, marginTop: 2, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: '4px solid white' }} />
         </div>
