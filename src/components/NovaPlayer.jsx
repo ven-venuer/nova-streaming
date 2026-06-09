@@ -12,6 +12,7 @@ export default function NovaPlayer({
   src, poster: posterProp, autoPlay = true, title,
   onTimeUpdate, onEnded,
   season, episode, maxSeason, maxEpisode, onSeasonChange, onEpisodeChange, isTv,
+  subtitles: externalSubtitles = [],
 }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -36,7 +37,13 @@ export default function NovaPlayer({
   const [speed, setSpeed] = useState(1);
   const [subtitleTracks, setSubtitleTracks] = useState([]);
   const [subtitleTrack, setSubtitleTrack] = useState(-1);
+  const subTrackRef = useRef(null);
 
+  const allSubs = [
+    ...subtitleTracks.map((t, i) => ({ id: i, name: t.name, lang: t.lang, source: 'hls' })),
+    ...externalSubtitles.map((s, i) => ({ id: subtitleTracks.length + i, name: s.label, lang: s.lang || '', source: 'external', url: s.url })),
+  ];
+  const hasSubtitles = allSubs.length > 0;
   const isHls = src?.includes('.m3u8');
 
   const onPlay = useCallback(() => { setPlaying(true); setEnded(false); }, []);
@@ -123,13 +130,46 @@ export default function NovaPlayer({
   }, []);
 
   const changeSubtitle = useCallback((index) => {
-    const hls = hlsRef.current;
-    if (hls && hls.subtitleTracks) {
-      hls.subtitleTrack = index;
-    }
     setSubtitleTrack(index);
     setShowSubtitles(false);
   }, []);
+
+  // ── Apply subtitle selection (HLS tracks + external <track> elements) ──
+  useEffect(() => {
+    const video = videoRef.current;
+    const hls = hlsRef.current;
+    if (!video) return;
+
+    // Remove any existing external track elements
+    const existing = video.querySelectorAll('track[data-external]');
+    existing.forEach(t => t.remove());
+
+    // Reset HLS subtitles
+    if (hls && hls.subtitleTracks) hls.subtitleTrack = -1;
+
+    if (subtitleTrack < 0) return;
+
+    const hlsTrackCount = subtitleTracks.length;
+    const extIdx = subtitleTrack - hlsTrackCount;
+
+    if (extIdx < 0) {
+      // HLS embedded track
+      if (hls && hls.subtitleTracks && subtitleTrack < hls.subtitleTracks.length) {
+        hls.subtitleTrack = subtitleTrack;
+      }
+    } else if (externalSubtitles[extIdx]) {
+      // External subtitle track
+      const sub = externalSubtitles[extIdx];
+      const track = document.createElement('track');
+      track.src = sub.url;
+      track.label = sub.label;
+      track.srclang = sub.lang || 'en';
+      track.kind = 'subtitles';
+      track.dataset.external = 'true';
+      track.default = true;
+      video.appendChild(track);
+    }
+  }, [subtitleTrack, subtitleTracks, externalSubtitles]);
 
   // ── Keyboard shortcuts ──
   useEffect(() => {
@@ -243,7 +283,6 @@ export default function NovaPlayer({
 
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const bufferedPct = duration > 0 ? (buffered / duration) * 100 : 0;
-  const hasSubtitles = subtitleTracks.length > 0;
 
   return (
     <div
@@ -500,7 +539,7 @@ export default function NovaPlayer({
                       }}
                     >
                       <div style={{ padding: '6px 10px 4px', fontSize: 11, color: THEME.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Subtitles</div>
-                      {hasSubtitles ? (
+                      {allSubs.length > 0 ? (
                         <>
                           <motion.div
                             whileHover={{ background: 'rgba(255,255,255,0.06)' }}
@@ -510,15 +549,15 @@ export default function NovaPlayer({
                             {subtitleTrack === -1 && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
                             <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === -1 ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === -1 ? 600 : 400 }}>Off</div>
                           </motion.div>
-                          {subtitleTracks.map(t => (
+                          {allSubs.map(t => (
                             <motion.div
-                              key={t.index}
+                              key={t.id}
                               whileHover={{ background: 'rgba(255,255,255,0.06)' }}
-                              onClick={() => changeSubtitle(t.index)}
-                              style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subtitleTrack === t.index ? `${THEME.primary}22` : 'transparent' }}
+                              onClick={() => changeSubtitle(t.id)}
+                              style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subtitleTrack === t.id ? `${THEME.primary}22` : 'transparent' }}
                             >
-                              {subtitleTrack === t.index && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
-                              <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === t.index ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === t.index ? 600 : 400 }}>{t.name}{t.lang ? ` (${t.lang})` : ''}</div>
+                              {subtitleTrack === t.id && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
+                              <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === t.id ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === t.id ? 600 : 400 }}>{t.name}{t.lang ? ` (${t.lang})` : ''}</div>
                             </motion.div>
                           ))}
                         </>

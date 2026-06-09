@@ -20,6 +20,7 @@ export default function VideoPlayer() {
   const triedRef = useRef(new Set());
   const isManualRef = useRef(false);
   const loaderTimer = useRef(null);
+  const [subtitles, setSubtitles] = useState([]);
   const isTv = item?.type === 'tv';
   const maxEpisode = isTv ? (item?.episodes || 99) : 0;
   const maxSeason = isTv ? (item?.seasons || 1) : 0;
@@ -166,6 +167,37 @@ export default function VideoPlayer() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [setPlayerTitle]);
+
+  useEffect(() => {
+    const fetchSubtitles = async () => {
+      const id = item?.tmdbId || item?.id;
+      if (!id) return;
+
+      try {
+        const params = new URLSearchParams({ id });
+        if (isTv) {
+          params.set('season', playerSeason);
+          params.set('episode', playerEpisode);
+        }
+        const response = await fetch(`/api/subtitles?${params}`);
+        const data = await response.json();
+
+        if (Array.isArray(data)) {
+          setSubtitles(data.map(s => ({
+            label: s.display,
+            lang: s.language || '',
+            url: s.url,
+          })));
+        } else {
+          setSubtitles([]);
+        }
+      } catch {
+        setSubtitles([]);
+      }
+    };
+
+    fetchSubtitles();
+  }, [item?.tmdbId, item?.id, isTv, playerSeason, playerEpisode]);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -394,6 +426,7 @@ export default function VideoPlayer() {
             episode={playerEpisode}
             maxSeason={maxSeason}
             maxEpisode={maxEpisode}
+            subtitles={subtitles}
             onSeasonChange={(s) => goToEpisode(s, 1)}
             onEpisodeChange={(e) => goToEpisode(playerSeason, e)}
           />

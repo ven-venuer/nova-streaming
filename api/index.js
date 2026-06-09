@@ -268,6 +268,28 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
+// ── Subtitle proxy (Wyzie Subs) ──
+app.get('/api/subtitles', async (req, res) => {
+  try {
+    const { id, season, episode, language } = req.query;
+    if (!id) return res.status(400).json({ error: 'TMDB or IMDB ID required.' });
+
+    const apiKey = process.env.WYZIE_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'Subtitle API not configured.' });
+
+    const params = new URLSearchParams({ id, language: language || 'en', format: 'vtt', key: apiKey });
+    if (season) params.set('season', season);
+    if (episode) params.set('episode', episode);
+
+    const response = await fetch(`https://sub.wyzie.io/search?${params}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error('Subtitle proxy error:', err);
+    res.status(502).json({ error: 'Failed to fetch subtitles.' });
+  }
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
