@@ -467,63 +467,70 @@ export default function NovaPlayer({
               )}
 
               {/* Subtitles */}
-              {hasSubtitles && (
-                <div style={{ position: 'relative' }}>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                    onClick={() => { setShowSubtitles(!showSubtitles); setShowSettings(false); }}
-                    style={{
-                      background: subtitleTrack >= 0 ? `${THEME.primary}33` : 'none',
-                      border: subtitleTrack >= 0 ? `1px solid ${THEME.primary}55` : 'none',
-                      color: subtitleTrack >= 0 ? THEME.primary : 'white',
-                      cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center', gap: 3, fontSize: 11,
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="4" width="18" height="16" rx="2" />
-                      <line x1="8" y1="12" x2="16" y2="12" />
-                      <line x1="8" y1="16" x2="14" y2="16" />
-                    </svg>
-                  </motion.button>
-                  <AnimatePresence>
-                    {showSubtitles && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        transition={{ duration: 0.12 }}
-                        style={{
-                          position: 'absolute', bottom: '100%', right: 0, marginBottom: 8,
-                          background: 'rgba(20,20,30,0.95)', backdropFilter: 'blur(12px)',
-                          border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 6, minWidth: 170,
-                          boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-                        }}
-                      >
-                        <div style={{ padding: '6px 10px 4px', fontSize: 11, color: THEME.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Subtitles</div>
-                        <motion.div
-                          whileHover={{ background: 'rgba(255,255,255,0.06)' }}
-                          onClick={() => changeSubtitle(-1)}
-                          style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subtitleTrack === -1 ? `${THEME.primary}22` : 'transparent' }}
-                        >
-                          {subtitleTrack === -1 && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
-                          <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === -1 ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === -1 ? 600 : 400 }}>Off</div>
-                        </motion.div>
-                        {subtitleTracks.map(t => (
+              <div style={{ position: 'relative' }}>
+                <motion.button
+                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                  onClick={() => { setShowSubtitles(!showSubtitles); setShowSettings(false); }}
+                  style={{
+                    background: subtitleTrack >= 0 ? `${THEME.primary}22` : 'transparent',
+                    border: subtitleTrack >= 0 ? `1px solid ${THEME.primary}44` : 'none',
+                    color: subtitleTrack >= 0 ? THEME.primary : THEME.textSec,
+                    cursor: 'pointer', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center', gap: 3, fontSize: 11,
+                    opacity: hasSubtitles ? 1 : 0.5,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <line x1="8" y1="16" x2="14" y2="16" />
+                  </svg>
+                </motion.button>
+                <AnimatePresence>
+                  {showSubtitles && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.12 }}
+                      style={{
+                        position: 'absolute', bottom: '100%', right: 0, marginBottom: 8,
+                        background: 'rgba(20,20,30,0.95)', backdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 6, minWidth: 190,
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      <div style={{ padding: '6px 10px 4px', fontSize: 11, color: THEME.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Subtitles</div>
+                      {hasSubtitles ? (
+                        <>
                           <motion.div
-                            key={t.index}
                             whileHover={{ background: 'rgba(255,255,255,0.06)' }}
-                            onClick={() => changeSubtitle(t.index)}
-                            style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subtitleTrack === t.index ? `${THEME.primary}22` : 'transparent' }}
+                            onClick={() => changeSubtitle(-1)}
+                            style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subtitleTrack === -1 ? `${THEME.primary}22` : 'transparent' }}
                           >
-                            {subtitleTrack === t.index && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
-                            <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === t.index ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === t.index ? 600 : 400 }}>{t.name}{t.lang ? ` (${t.lang})` : ''}</div>
+                            {subtitleTrack === -1 && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
+                            <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === -1 ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === -1 ? 600 : 400 }}>Off</div>
                           </motion.div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+                          {subtitleTracks.map(t => (
+                            <motion.div
+                              key={t.index}
+                              whileHover={{ background: 'rgba(255,255,255,0.06)' }}
+                              onClick={() => changeSubtitle(t.index)}
+                              style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subtitleTrack === t.index ? `${THEME.primary}22` : 'transparent' }}
+                            >
+                              {subtitleTrack === t.index && <svg width="14" height="14" viewBox="0 0 24 24" fill={THEME.primary}><polygon points="20 6 9 17 4 12" /></svg>}
+                              <div style={{ flex: 1, fontSize: 13, color: subtitleTrack === t.index ? THEME.primary : THEME.textSec, fontWeight: subtitleTrack === t.index ? 600 : 400 }}>{t.name}{t.lang ? ` (${t.lang})` : ''}</div>
+                            </motion.div>
+                          ))}
+                        </>
+                      ) : (
+                        <div style={{ padding: '10px', fontSize: 12, color: THEME.textMuted, textAlign: 'center' }}>
+                          No subtitles available for this stream
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Settings */}
               <div style={{ position: 'relative' }}>
