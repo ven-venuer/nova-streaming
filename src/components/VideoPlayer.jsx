@@ -389,6 +389,13 @@ export default function VideoPlayer() {
           <NovaPlayer
             src={streamUrl}
             title={isTv ? `${item.title} · S${playerSeason} E${playerEpisode}` : item.title}
+            isTv={isTv}
+            season={playerSeason}
+            episode={playerEpisode}
+            maxSeason={maxSeason}
+            maxEpisode={maxEpisode}
+            onSeasonChange={(s) => goToEpisode(s, 1)}
+            onEpisodeChange={(e) => goToEpisode(playerSeason, e)}
           />
         </motion.div>
       );
