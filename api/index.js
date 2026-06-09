@@ -277,7 +277,7 @@ app.get('/api/subtitles', async (req, res) => {
     const apiKey = process.env.WYZIE_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'Subtitle API not configured.' });
 
-    const params = new URLSearchParams({ id, language: language || 'en', format: 'vtt', key: apiKey });
+    const params = new URLSearchParams({ id, language: language || 'en', key: apiKey });
     if (season) params.set('season', season);
     if (episode) params.set('episode', episode);
 

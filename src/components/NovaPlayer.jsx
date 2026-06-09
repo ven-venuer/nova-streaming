@@ -38,6 +38,8 @@ export default function NovaPlayer({
   const [subtitleTracks, setSubtitleTracks] = useState([]);
   const [subtitleTrack, setSubtitleTrack] = useState(-1);
   const subTrackRef = useRef(null);
+  const subBlobRef = useRef(null);
+  const subAbortRef = useRef(null);
 
   const allSubs = [
     ...subtitleTracks.map((t, i) => ({ id: i, name: t.name, lang: t.lang, source: 'hls' })),
@@ -134,15 +136,18 @@ export default function NovaPlayer({
     setShowSubtitles(false);
   }, []);
 
-  // ── Apply subtitle selection (HLS tracks + external <track> elements) ──
+  // ── Apply subtitle selection (HLS tracks + external SRT→VTT via blob URL) ──
   useEffect(() => {
     const video = videoRef.current;
     const hls = hlsRef.current;
     if (!video) return;
 
-    // Remove any existing external track elements
-    const existing = video.querySelectorAll('track[data-external]');
-    existing.forEach(t => t.remove());
+    // Cancel in-flight fetch
+    subAbortRef.current?.abort();
+
+    // Revoke previous blob URL and remove external track elements
+    if (subBlobRef.current) { URL.revokeObjectURL(subBlobRef.current); subBlobRef.current = null; }
+    video.querySelectorAll('track[data-external]').forEach(t => t.remove());
 
     // Reset HLS subtitles
     if (hls && hls.subtitleTracks) hls.subtitleTrack = -1;
@@ -158,17 +163,34 @@ export default function NovaPlayer({
         hls.subtitleTrack = subtitleTrack;
       }
     } else if (externalSubtitles[extIdx]) {
-      // External subtitle track
       const sub = externalSubtitles[extIdx];
-      const track = document.createElement('track');
-      track.src = sub.url;
-      track.label = sub.label;
-      track.srclang = sub.lang || 'en';
-      track.kind = 'subtitles';
-      track.dataset.external = 'true';
-      track.default = true;
-      video.appendChild(track);
+      const controller = new AbortController();
+      subAbortRef.current = controller;
+
+      fetch(sub.url, { signal: controller.signal })
+        .then(r => r.text())
+        .then(text => {
+          const vtt = 'WEBVTT\n\n' + text.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+          const blob = new Blob([vtt], { type: 'text/vtt' });
+          const url = URL.createObjectURL(blob);
+          subBlobRef.current = url;
+          const track = document.createElement('track');
+          track.src = url;
+          track.label = sub.label;
+          track.srclang = sub.lang || 'en';
+          track.kind = 'subtitles';
+          track.dataset.external = 'true';
+          track.default = true;
+          video.appendChild(track);
+        })
+        .catch(() => {});
     }
+
+    return () => {
+      subAbortRef.current?.abort();
+      if (subBlobRef.current) { URL.revokeObjectURL(subBlobRef.current); subBlobRef.current = null; }
+      video?.querySelectorAll('track[data-external]').forEach(t => t.remove());
+    };
   }, [subtitleTrack, subtitleTracks, externalSubtitles]);
 
   // ── Keyboard shortcuts ──
