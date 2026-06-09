@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AppContext } from '../App.jsx';
 import { getMovieEmbedUrl, getTVEmbedUrl, PROVIDERS } from '../tmdb.js';
-import HlsPlayer from './HlsPlayer.jsx';
+import NovaPlayer from './NovaPlayer.jsx';
 
 const THEME = { primary: '#e50914', bg: '#080810', surface: '#0f0f1a', text: '#ffffff', textSec: '#a0a0b8', textMuted: '#505068' };
 
@@ -12,7 +12,7 @@ export default function VideoPlayer() {
   const containerRef = useRef(null);
   const [provider, setProvider] = useState('videasy');
   const [streamUrl, setStreamUrl] = useState(null);
-  const [useHls, setUseHls] = useState(false);
+  const [useNovaPlayer, setUseNovaPlayer] = useState(false);
   const [loadingStream, setLoadingStream] = useState(false);
   const [streamError, setStreamError] = useState(null);
   const [allFailed, setAllFailed] = useState(false);
@@ -20,15 +20,15 @@ export default function VideoPlayer() {
   const triedRef = useRef(new Set());
   const isManualRef = useRef(false);
   const loaderTimer = useRef(null);
-  const maxEpisode = item?.episodes || 99;
-  const maxSeason = item?.seasons || 1;
+  const isTv = item?.type === 'tv';
+  const maxEpisode = isTv ? (item?.episodes || 99) : 0;
+  const maxSeason = isTv ? (item?.seasons || 1) : 0;
 
-  const embedUrl = item.type === 'tv'
+  const embedUrl = isTv
     ? getTVEmbedUrl(item.tmdbId || item.id, playerSeason, playerEpisode, provider)
     : getMovieEmbedUrl(item.tmdbId || item.id, provider);
 
   const currentProvider = PROVIDERS.find(p => p.id === provider);
-  const providerIndex = PROVIDERS.findIndex(p => p.id === provider);
 
   const fallbackToNext = useCallback((failedProviderId) => {
     triedRef.current = new Set([...triedRef.current, failedProviderId]);
@@ -48,31 +48,34 @@ export default function VideoPlayer() {
   }, []);
 
   const goToEpisode = useCallback((season, episode) => {
+    if (!isTv) return;
     if (season < 1 || season > maxSeason) return;
     if (episode < 1 || episode > (season === playerSeason ? maxEpisode : 99)) return;
     setPlayerSeason(season);
     setPlayerEpisode(episode);
-  }, [maxSeason, maxEpisode, playerSeason]);
+  }, [isTv, maxSeason, maxEpisode, playerSeason]);
 
   const goNext = useCallback(() => {
+    if (!isTv) return;
     if (playerEpisode < maxEpisode) {
       goToEpisode(playerSeason, playerEpisode + 1);
     } else if (playerSeason < maxSeason) {
       goToEpisode(playerSeason + 1, 1);
     }
-  }, [playerEpisode, playerSeason, maxEpisode, maxSeason, goToEpisode]);
+  }, [isTv, playerEpisode, playerSeason, maxEpisode, maxSeason, goToEpisode]);
 
   const goPrev = useCallback(() => {
+    if (!isTv) return;
     if (playerEpisode > 1) {
       goToEpisode(playerSeason, playerEpisode - 1);
     } else if (playerSeason > 1) {
       goToEpisode(playerSeason - 1, maxEpisode);
     }
-  }, [playerEpisode, playerSeason, maxEpisode, goToEpisode]);
+  }, [isTv, playerEpisode, playerSeason, maxEpisode, goToEpisode]);
 
   useEffect(() => {
     setStreamUrl(null);
-    setUseHls(false);
+    setUseNovaPlayer(false);
     setLoadingStream(false);
     setStreamError(null);
     setAllFailed(false);
@@ -104,12 +107,12 @@ export default function VideoPlayer() {
           data = await response.json();
           if (data.success && data.url) {
             setStreamUrl(data.url);
-            setUseHls(true);
+            setUseNovaPlayer(true);
           } else {
             setStreamError(data.error || 'Failed to get stream');
           }
         } else if (provider === 'flixquest') {
-          const url = item.type === 'tv'
+          const url = isTv
             ? `https://flixquest-scraper-five.vercel.app/vixsrc/stream-tv?tmdbId=${item.tmdbId}&season=${playerSeason || 1}&episode=${playerEpisode || 1}`
             : `https://flixquest-scraper-five.vercel.app/vixsrc/stream-movie?tmdbId=${item.tmdbId}`;
 
@@ -118,7 +121,7 @@ export default function VideoPlayer() {
 
           if (data.success && data.links && data.links.length > 0) {
             setStreamUrl(data.links[0].url);
-            setUseHls(true);
+            setUseNovaPlayer(true);
           } else {
             setStreamError(data.error || 'No streams found for this media');
           }
@@ -130,7 +133,7 @@ export default function VideoPlayer() {
       }
     };
     fetchStream();
-  }, [provider, item.tmdbId, item.type, item.title, playerSeason, playerEpisode]);
+  }, [provider, item.tmdbId, item.type, item.title, playerSeason, playerEpisode, isTv]);
 
   useEffect(() => {
     if (streamError && (provider === 'nova_native' || provider === 'flixquest') && !loadingStream) {
@@ -150,12 +153,13 @@ export default function VideoPlayer() {
 
   useEffect(() => {
     const handleMessage = (event) => {
+      if (!isTv) return;
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         const s = data?.season || data?.data?.season || data?.detail?.season || data?.data?.last_season_watched;
         const e = data?.episode || data?.data?.episode || data?.detail?.episode || data?.data?.last_episode_watched;
 
-        if (s && e && item.type === 'tv') {
+        if (s && e) {
           setPlayerSeason(Number(s));
           setPlayerEpisode(Number(e));
         }
@@ -163,7 +167,7 @@ export default function VideoPlayer() {
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [item.type, setPlayerSeason, setPlayerEpisode]);
+  }, [isTv, setPlayerSeason, setPlayerEpisode]);
 
   const renderTopBar = () => (
     <motion.div
@@ -197,24 +201,17 @@ export default function VideoPlayer() {
           }}>
             {item.title}
           </div>
-          {item.type === 'tv' ? (
-            <div style={{ fontSize: 12, color: THEME.textSec, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>Season {playerSeason}</span>
-              <span style={{ color: THEME.textMuted }}>·</span>
-              <span>Episode {playerEpisode}</span>
-              <span style={{ color: THEME.textMuted }}>·</span>
-              <span style={{ color: THEME.primary, fontSize: 11, fontWeight: 500 }}>{currentProvider?.name || provider}</span>
-            </div>
-          ) : (
-            <div style={{ fontSize: 12, color: THEME.textSec, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>{item.year}</span>
-              <span style={{ color: THEME.textMuted }}>·</span>
-              <span style={{ color: THEME.primary, fontSize: 11, fontWeight: 500 }}>{currentProvider?.name || provider}</span>
-            </div>
-          )}
+          <div style={{ fontSize: 12, color: THEME.textSec, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {isTv ? (
+              <>Season {playerSeason}<span style={{ color: THEME.textMuted }}>·</span>Episode {playerEpisode}<span style={{ color: THEME.textMuted }}>·</span></>
+            ) : (
+              <>{item.year}<span style={{ color: THEME.textMuted }}>·</span></>
+            )}
+            <span style={{ color: THEME.primary, fontSize: 11, fontWeight: 500 }}>{currentProvider?.name || provider}</span>
+          </div>
         </div>
 
-        {item.type === 'tv' && (
+        {isTv && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -222,10 +219,11 @@ export default function VideoPlayer() {
               onClick={goPrev}
               disabled={playerEpisode <= 1 && playerSeason <= 1}
               style={{
-                background: 'rgba(255,255,255,0.08)', border: 'none', color: playerEpisode <= 1 && playerSeason <= 1 ? THEME.textMuted : 'white',
-                width: 32, height: 32, borderRadius: 8, cursor: playerEpisode <= 1 && playerSeason <= 1 ? 'default' : 'pointer',
+                background: 'rgba(255,255,255,0.08)', border: 'none',
+                color: playerEpisode <= 1 && playerSeason <= 1 ? THEME.textMuted : 'white',
+                width: 32, height: 32, borderRadius: 8,
+                cursor: playerEpisode <= 1 && playerSeason <= 1 ? 'default' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
               }}
             >
               <ChevronLeft size={18} />
@@ -237,9 +235,9 @@ export default function VideoPlayer() {
               disabled={playerEpisode >= maxEpisode && playerSeason >= maxSeason}
               style={{
                 background: THEME.primary, border: 'none', color: 'white',
-                width: 32, height: 32, borderRadius: 8, cursor: playerEpisode >= maxEpisode && playerSeason >= maxSeason ? 'default' : 'pointer',
+                width: 32, height: 32, borderRadius: 8,
+                cursor: playerEpisode >= maxEpisode && playerSeason >= maxSeason ? 'default' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
               }}
             >
               <ChevronRight size={18} />
@@ -262,7 +260,7 @@ export default function VideoPlayer() {
               padding: '2px 4px',
             }}
           >
-            {PROVIDERS.map((p, i) => (
+            {PROVIDERS.map(p => (
               <option key={p.id} value={p.id} style={{ background: THEME.bg, color: 'white' }}>
                 {p.name}
               </option>
@@ -285,7 +283,7 @@ export default function VideoPlayer() {
         </motion.div>
       </div>
 
-      {item.type === 'tv' && (
+      {isTv && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 34 }}>
           <span style={{ fontSize: 11, color: THEME.textMuted, whiteSpace: 'nowrap' }}>Season</span>
           <select
@@ -355,29 +353,27 @@ export default function VideoPlayer() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            style={{
-              width: 44, height: 44,
-              border: '3px solid rgba(255,255,255,0.08)',
-              borderTopColor: THEME.primary,
-              borderRadius: '50%',
-            }}
+            style={{ width: 44, height: 44, border: '3px solid rgba(255,255,255,0.08)', borderTopColor: THEME.primary, borderRadius: '50%' }}
           />
           <div style={{ color: THEME.textSec, fontSize: 13 }}>Extracting Raw Stream...</div>
         </motion.div>
       );
     }
 
-    if (useHls && streamUrl && !loadingStream) {
+    if (useNovaPlayer && streamUrl && !loadingStream) {
       return (
         <motion.div
-          key="hls-player"
+          key="nova-player"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           style={{ flex: 1, width: '100%', height: '100%' }}
         >
-          <HlsPlayer src={streamUrl} />
+          <NovaPlayer
+            src={streamUrl}
+            title={isTv ? `${item.title} · S${playerSeason} E${playerEpisode}` : item.title}
+          />
         </motion.div>
       );
     }
@@ -408,12 +404,7 @@ export default function VideoPlayer() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                style={{
-                  width: 36, height: 36,
-                  border: '2.5px solid rgba(255,255,255,0.06)',
-                  borderTopColor: THEME.primary,
-                  borderRadius: '50%',
-                }}
+                style={{ width: 36, height: 36, border: '2.5px solid rgba(255,255,255,0.06)', borderTopColor: THEME.primary, borderRadius: '50%' }}
               />
             </motion.div>
           )}
