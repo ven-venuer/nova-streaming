@@ -93,9 +93,11 @@ export default function VideoPlayer() {
     setAllFailed(false);
   }, [item.tmdbId, playerSeason, playerEpisode]);
 
+  const isDirectStream = provider === 'nova_native' || provider === 'flixquest' || provider === 'zenith';
+
   useEffect(() => {
     const fetchStream = async () => {
-      if (!item?.tmdbId || (provider !== 'nova_native' && provider !== 'flixquest')) return;
+      if (!item?.tmdbId || !isDirectStream) return;
 
       setLoadingStream(true);
       setStreamError(null);
@@ -125,6 +127,20 @@ export default function VideoPlayer() {
           } else {
             setStreamError(data.error || 'No streams found for this media');
           }
+        } else if (provider === 'zenith') {
+          const apiUrl = isTv
+            ? `https://movie-scraper-sooty.vercel.app/api?id=${item.tmdbId}&s=${playerSeason || 1}&e=${playerEpisode || 1}`
+            : `https://movie-scraper-sooty.vercel.app/api?id=${item.tmdbId}`;
+
+          const response = await fetch(apiUrl);
+          data = await response.json();
+
+          if (data.url) {
+            setStreamUrl(`https://movie-scraper-sooty.vercel.app/api?url=${encodeURIComponent(data.url)}`);
+            setUseNovaPlayer(true);
+          } else {
+            setStreamError(data.error || 'No stream found');
+          }
         }
       } catch (err) {
         setStreamError('Connection error');
@@ -133,13 +149,13 @@ export default function VideoPlayer() {
       }
     };
     fetchStream();
-  }, [provider, item.tmdbId, item.type, item.title, playerSeason, playerEpisode, isTv]);
+  }, [provider, item.tmdbId, item.type, item.title, playerSeason, playerEpisode, isTv, isDirectStream]);
 
   useEffect(() => {
-    if (streamError && (provider === 'nova_native' || provider === 'flixquest') && !loadingStream) {
+    if (streamError && isDirectStream && !loadingStream) {
       fallbackToNext(provider);
     }
-  }, [streamError, loadingStream, provider, fallbackToNext]);
+  }, [streamError, loadingStream, provider, fallbackToNext, isDirectStream]);
 
   useEffect(() => {
     const handleKey = (e) => {
@@ -341,7 +357,7 @@ export default function VideoPlayer() {
       );
     }
 
-    if (loadingStream && (provider === 'nova_native' || provider === 'flixquest')) {
+    if (loadingStream && isDirectStream) {
       return (
         <motion.div
           key="stream-loading"

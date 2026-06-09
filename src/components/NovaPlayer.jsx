@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Hls from 'hls.js';
 
 const THEME = {
   primary: '#e50914', primaryDim: 'rgba(229,9,20,0.2)',
@@ -148,6 +149,51 @@ export default function NovaPlayer({ src, poster: posterProp, autoPlay = true, t
     }
     return () => clearTimeout(hideTimer.current);
   }, [playing, ready]);
+
+  // ── HLS.js initialization ──
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isHls || !src) return;
+
+    let hls;
+    setLoading(true);
+
+    if (Hls.isSupported()) {
+      hls = new Hls({
+        maxLoadingDelay: 4,
+        minAutoBitrate: 0,
+      });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        setLoading(false);
+        setReady(true);
+        if (autoPlay) video.play().catch(() => {});
+      });
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (data.fatal) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            hls.startLoad();
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hls.recoverMediaError();
+          } else {
+            hls.destroy();
+          }
+        }
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src;
+      video.addEventListener('loadedmetadata', () => {
+        setLoading(false);
+        setReady(true);
+        if (autoPlay) video.play().catch(() => {});
+      });
+    }
+
+    return () => {
+      if (hls) hls.destroy();
+    };
+  }, [src, autoPlay, isHls]);
 
   // ── Format time ──
   const fmt = (s) => {
